@@ -1,0 +1,1767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Forager Interactive Walkthrough</title>
+<meta name="description" content="A guided, zero-API walkthrough of Forager, a supplier-document intake pipeline: the LLM reads, the code judges, the human decides. Fictional sample data; runs entirely in your browser." />
+<meta name="color-scheme" content="light dark" />
+<style>
+  /* ===================================================================
+     Tokens: mirror frontend/src/index.css so the shell, landing, and
+     the embedded app read as one product.
+     =================================================================== */
+  :root {
+    --brand: #445498;
+    --brand-text: #445498;
+    --brand-deep: #36457f;
+    --brand-bg: rgba(68, 84, 152, 0.12);
+    --brand-ring: rgba(68, 84, 152, 0.28);
+    --accent: #16b378;
+    --accent-bg: rgba(22, 179, 120, 0.14);
+    --accent-text: #0e7a51;
+    --amber: #f5a623;
+    --amber-bg: rgba(245, 166, 35, 0.16);
+    --amber-text: #8a5a05;
+    --red: #ff5f6d;
+    --red-bg: rgba(255, 95, 109, 0.16);
+    --red-text: #c62d3f;
+
+    --bg: #f5f6fb;
+    --panel: rgba(255, 255, 255, 0.72);
+    --panel-solid: #ffffff;
+    --border: rgba(20, 23, 31, 0.09);
+    --border-strong: rgba(20, 23, 31, 0.16);
+    --text: #14171f;
+    --text-2: #555a6e;
+    --text-3: #6b6f80;
+    --shadow-card: 0 22px 44px -20px rgba(30, 35, 60, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    --shadow-float: 0 18px 40px -12px rgba(30, 35, 60, 0.28);
+    --dim: rgba(18, 22, 40, 0.35);
+
+    --r-sm: 7px;
+    --r-md: 12px;
+    --r-lg: 17px;
+    --r-pill: 999px;
+
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI Rounded', 'Segoe UI', 'Helvetica Neue', Roboto, Arial, sans-serif;
+    --mono: ui-monospace, 'SF Mono', Consolas, monospace;
+    --ease: cubic-bezier(.22, 1, .36, 1);
+
+    --bar-h: 52px;
+    --guide-w: 360px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Mirrors frontend/src/index.css dark tokens: #4b5ea9 for fills, #8e9de0 for text only. */
+      --brand: #4b5ea9;
+      --brand-text: #8e9de0;
+      --brand-deep: #5d71c0;
+      --brand-bg: rgba(75, 94, 169, 0.22);
+      --brand-ring: rgba(142, 157, 224, 0.34);
+      --accent-text: #3fd39b;
+      --amber-text: #f5b84a;
+      --red-text: #ff8a94;
+      --amber-bg: rgba(240, 182, 79, 0.2);
+      --bg: #1c1d22;
+      --panel: rgba(44, 46, 54, 0.68);
+      --panel-solid: #2c2e36;
+      --border: rgba(255, 255, 255, 0.095);
+      --border-strong: rgba(255, 255, 255, 0.18);
+      --text: #eeeeed;
+      --text-2: #aaabb1;
+      --text-3: #9a9ba3;
+      --shadow-card: 0 10px 26px -14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      --shadow-float: 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+      --dim: rgba(0, 0, 0, 0.5);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  button { font-family: inherit; }
+  svg.i { display: block; flex-shrink: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 36px; padding: 0 14px; border-radius: var(--r-sm);
+    border: 1px solid var(--border-strong); background: var(--panel-solid); color: var(--text);
+    font-size: 13.5px; font-weight: 650; cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s, transform .1s, opacity .15s;
+  }
+  .btn:hover { border-color: var(--brand-ring); background: var(--brand-bg); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled, .btn[aria-disabled='true'] { opacity: .45; cursor: default; transform: none; }
+  .btn[aria-disabled='true']:hover { background: var(--panel-solid); border-color: var(--border-strong); }
+  .btn.primary[aria-disabled='true']:hover { background: var(--brand); border-color: var(--brand); }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.primary:hover { background: var(--brand-deep); border-color: var(--brand-deep); }
+  .btn.ghost { background: transparent; }
+  .btn.small { height: 30px; padding: 0 11px; font-size: 12.5px; }
+  .btn.lg { height: 48px; padding: 0 22px; font-size: 15.5px; border-radius: var(--r-md); }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border);
+    background: transparent; color: var(--text-2); display: inline-flex; align-items: center;
+    justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--brand-bg); color: var(--text); }
+
+  /* ---------- wordmark ---------- */
+  .wordmark { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; font-size: 17px; letter-spacing: -0.01em; color: var(--text); }
+  .wordmark .mark {
+    width: 28px; height: 28px; border-radius: 8px; background: var(--brand); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* ===================================================================
+     LANDING
+     =================================================================== */
+  #landing {
+    position: fixed; inset: 0; z-index: 50; overflow-y: auto; overflow-x: hidden;
+    background:
+      radial-gradient(900px 520px at 8% -6%, rgba(68, 84, 152, 0.16), transparent 70%),
+      radial-gradient(700px 480px at 100% 10%, rgba(22, 179, 120, 0.10), transparent 70%),
+      var(--bg);
+    transition: opacity .35s var(--ease), visibility .35s;
+  }
+  #landing.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  .l-wrap { width: min(1080px, 100%); margin: 0 auto; padding: 22px 24px 64px; }
+  .l-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 56px; }
+  .l-top .note { font-size: 12.5px; color: var(--text-3); font-weight: 600; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--brand-text);
+    background: var(--brand-bg); border: 1px solid var(--brand-ring);
+  }
+  .hero h1 { font-size: clamp(34px, 5.4vw, 56px); line-height: 1.04; letter-spacing: -0.025em; margin: 18px 0 16px; font-weight: 800; max-width: 820px; }
+  .hero h1 .soft { color: var(--brand-text); }
+  .hero p.lede { font-size: clamp(16px, 1.8vw, 19px); line-height: 1.55; color: var(--text-2); max-width: 640px; margin: 0 0 30px; }
+  .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .cta-row .meta { font-size: 13px; color: var(--text-3); font-weight: 600; }
+  .hero p.sub { font-size: 15px; line-height: 1.55; color: var(--text-3); max-width: 640px; margin: -14px 0 26px; }
+  .trio-lead { margin: 48px 0 0; font-size: 16px; line-height: 1.5; color: var(--text-2); max-width: 760px; }
+  .trio-lead b { color: var(--text); }
+  .trio-lead .def { display: block; margin-top: 4px; font-size: 13.5px; color: var(--text-3); font-weight: 600; }
+  #start-btn .spin { display: none; }
+  #start-btn.loading .spin { display: inline-block; }
+  .l-error {
+    margin-top: 14px; padding: 12px 14px; border-radius: var(--r-md); background: var(--red-bg);
+    color: var(--red-text); font-size: 13.5px; font-weight: 600; line-height: 1.5; max-width: 640px;
+  }
+  .l-error code { font-family: var(--mono); font-size: 12.5px; }
+
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+  .trio .card { padding: 20px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+  .trio .k { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+  .chip { width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+  .trio h3 { margin: 0 0 6px; font-size: 19px; letter-spacing: -0.01em; }
+  .trio p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.55; }
+
+  .l-section { margin-top: 72px; }
+  .l-section .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-text); margin-bottom: 8px; }
+  .l-section h2 { font-size: clamp(24px, 3vw, 32px); margin: 0 0 10px; letter-spacing: -0.02em; line-height: 1.15; }
+  .l-section > p { color: var(--text-2); font-size: 15.5px; line-height: 1.55; margin: 0 0 22px; max-width: 640px; }
+  .problems { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .problems .card { padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; }
+  .problems h4 { margin: 0 0 3px; font-size: 15px; }
+  .problems p { margin: 0; font-size: 14px; color: var(--text-2); line-height: 1.5; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .flow .stage-card {
+    flex: 1 1 120px; min-width: 120px; padding: 14px 12px; text-align: left; position: relative;
+  }
+  .flow .n { font-size: 11px; font-weight: 800; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .flow .lbl { font-size: 14px; font-weight: 750; margin-top: 8px; line-height: 1.25; }
+  .flow .who { margin-top: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
+  .who.llm { color: var(--brand-text); }
+  .who.code { color: var(--accent-text); }
+  .who.human { color: var(--amber-text); }
+  .flow .stage-card.gate { border-color: rgba(245, 166, 35, 0.55); box-shadow: 0 0 0 3px var(--amber-bg), var(--shadow-card); }
+  .flow-note { margin-top: 14px; font-size: 13.5px; color: var(--text-2); display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+  .l-foot { margin-top: 72px; padding-top: 22px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-3); }
+  .l-foot a { color: var(--brand-text); font-weight: 650; }
+
+  @media (max-width: 820px) {
+    .l-top { margin-bottom: 32px; }
+    .trio { grid-template-columns: 1fr; margin-top: 14px; }
+    .trio-lead { margin-top: 34px; }
+    .problems { grid-template-columns: 1fr; }
+    .l-section { margin-top: 52px; }
+    .l-wrap { padding: 16px 16px 48px; }
+    .l-top .note { display: none; }
+  }
+
+  /* ===================================================================
+     TOUR SHELL
+     =================================================================== */
+  #tour {
+    position: fixed; inset: 0; z-index: 10;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--guide-w);
+    grid-template-rows: var(--bar-h) minmax(0, 1fr);
+    grid-template-areas: "bar bar" "stage guide";
+    background: var(--bg);
+    visibility: hidden;
+  }
+  #tour.on { visibility: visible; }
+  #tour.guide-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
+  #tour.guide-collapsed #guide { display: none; }
+
+  .t-bar {
+    grid-area: bar; display: flex; align-items: center; gap: 12px; padding: 0 14px 0 16px;
+    border-bottom: 1px solid var(--border); background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    min-width: 0;
+  }
+  .t-bar .wordmark { font-size: 15.5px; }
+  .t-bar .wordmark .mark { width: 24px; height: 24px; border-radius: 7px; }
+  .demo-tag {
+    font-size: 12px; font-weight: 650; color: var(--text-2); padding: 5px 10px; border-radius: var(--r-pill);
+    background: var(--brand-bg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .t-bar .spacer { flex: 1; }
+
+  .stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
+  #app-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--bg); }
+
+  /* Spotlight lives in a layer that exactly overlays the iframe, so an element's
+     getBoundingClientRect() inside the iframe maps 1:1 to layer coordinates. */
+  #spot-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 3; }
+  #spot {
+    position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 11px; opacity: 0;
+    border: 2px solid var(--brand-text);
+    box-shadow: 0 0 0 4px var(--brand-ring), 0 0 0 200vmax var(--dim);
+    /* No opacity transition on purpose: transitions only advance on painted frames, and a
+       backgrounded tab can leave the ring stuck invisible. The .pulse keyframes handle entry. */
+  }
+  #spot.on { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    /* Geometry glide only while the ring moves to a NEW target; per-frame tracking stays instant. */
+    #spot.glide { transition: left .22s var(--ease), top .22s var(--ease), width .22s var(--ease), height .22s var(--ease); }
+  }
+  #spot.pulse { animation: spotIn .7s var(--ease); }
+  @keyframes spotIn {
+    0% { transform: scale(1.06); box-shadow: 0 0 0 12px rgba(68,84,152,0), 0 0 0 200vmax rgba(18,22,40,0); }
+    60% { transform: scale(1); box-shadow: 0 0 0 7px var(--brand-ring), 0 0 0 200vmax var(--dim); }
+    100% { transform: scale(1); box-shadow: 0 0 0 4px var(--brand-ring), 0 0 0 200vmax var(--dim); }
+  }
+  #tap {
+    position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
+    background: rgba(68, 84, 152, 0.35); border: 2px solid var(--brand-text); opacity: 0; transform: scale(.4);
+  }
+  #tap.go { animation: tap .55s var(--ease); }
+  @keyframes tap { 0% { opacity: .95; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.5); } }
+
+  #connector { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+  #connector line { stroke: var(--brand-text); stroke-width: 1.5; stroke-dasharray: 4 5; opacity: 0; }
+  #connector circle { fill: var(--brand-text); opacity: 0; }
+
+  .stage-overlay {
+    position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+    background: rgba(245, 246, 251, 0.86); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .stage-overlay[hidden] { display: none; }
+  .loader { display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 650; color: var(--text-2); font-size: 14px; text-align: center; padding: 16px; }
+  .spin {
+    width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid var(--brand-ring); border-top-color: var(--brand-text);
+    animation: spin .8s linear infinite;
+  }
+  .loader .spin { width: 26px; height: 26px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- the guide panel (docked right on desktop, bottom sheet on mobile) ---------- */
+  #guide {
+    grid-area: guide; min-width: 0; min-height: 0; display: flex; flex-direction: column;
+    border-left: 1px solid var(--border); background: var(--panel);
+    backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
+    position: relative; z-index: 6;
+  }
+  .g-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 22px 8px; }
+  .g-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .g-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--brand-text); min-width: 0; }
+  .g-eyebrow .ic { width: 22px; height: 22px; border-radius: 7px; background: var(--brand-bg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .g-eyebrow .pg { color: var(--text-3); font-weight: 700; letter-spacing: .02em; text-transform: none; }
+  .g-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; margin-bottom: 18px; }
+  .g-bar span { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 2px; transition: width .4s var(--ease); }
+  .g-body { transition: opacity .16s ease; }
+  .g-body.swap { opacity: 0; }
+  .g-context { margin: 0 0 6px; font-size: 13px; color: var(--text-3); font-weight: 600; line-height: 1.45; }
+  .g-title { margin: 0 0 8px; font-size: 23px; line-height: 1.18; letter-spacing: -0.015em; font-weight: 800; }
+  .g-text { margin: 0 0 16px; font-size: 15px; line-height: 1.55; color: var(--text-2); }
+  .g-cta { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--brand-text); }
+  .g-cta[hidden] { display: none; }
+  .g-status { min-height: 20px; margin: 12px 0 0; font-size: 13px; color: var(--text-3); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .g-status .spin { width: 13px; height: 13px; border-width: 2px; }
+  .g-foot { border-top: 1px solid var(--border); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .g-nav { display: flex; align-items: center; gap: 10px; }
+  .g-nav .g-step { flex: 1; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  #g-next { min-width: 112px; }
+  #g-next .spin { display: none; width: 14px; height: 14px; border-width: 2px; border-color: rgba(255,255,255,.4); border-top-color: #fff; }
+  #g-next.busy .spin { display: inline-block; }
+  #g-next.busy .lbl-arrow { display: none; }
+  .g-dots { display: flex; justify-content: center; gap: 0; flex-wrap: wrap; }
+  .g-dot { width: 26px; height: 26px; padding: 0; border: 0; background: transparent; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .g-dot::before { content: ''; width: 7px; height: 7px; border-radius: 4px; background: var(--border-strong); transition: width .2s, background .2s; }
+  .g-dot.done::before { background: var(--brand-ring); }
+  .g-dot.active::before { width: 18px; background: var(--brand-text); }
+  .g-dot:hover::before { background: var(--brand-text); }
+  .g-dot:focus-visible { outline: 2px solid var(--brand-text); outline-offset: -2px; background: var(--brand-bg); }
+  .g-keys { margin: 0; text-align: center; font-size: 12.5px; color: var(--text-3); font-weight: 600; }
+  kbd { font-family: var(--font); font-size: 12px; font-weight: 700; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-strong); background: var(--panel-solid); }
+
+  #g-pill {
+    position: absolute; right: 16px; bottom: 16px; z-index: 7; display: flex; align-items: center; gap: 4px; padding: 4px;
+    background: var(--panel-solid); border: 1px solid var(--border); border-radius: var(--r-pill); box-shadow: var(--shadow-float);
+  }
+  #g-pill[hidden] { display: none; }
+  #g-pill .btn { border-radius: var(--r-pill); height: 36px; }
+  #g-pill .dotc { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+
+  .g-strip { display: none; }
+
+  /* ---------- end screen ---------- */
+  #end {
+    position: absolute; inset: 0; z-index: 8; overflow-y: auto; display: flex; align-items: flex-start; justify-content: center;
+    padding: 40px 16px; background: rgba(245, 246, 251, 0.8); background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  #end[hidden] { display: none; }
+  .end-card { width: min(720px, 100%); padding: 28px 28px 24px; background: var(--panel-solid); margin: auto 0; }
+  .end-note { margin: 0 0 18px; padding: 10px 12px; border-radius: var(--r-md); background: var(--brand-bg); color: var(--text-2); font-size: 13.5px; line-height: 1.5; }
+  .end-card h2 { margin: 10px 0 16px; font-size: clamp(24px, 3.2vw, 30px); letter-spacing: -0.02em; line-height: 1.15; }
+  .end-card > p { margin: 0 0 18px; color: var(--text-2); font-size: 15px; line-height: 1.55; }
+  .recap { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 10px; }
+  .recap li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.5; color: var(--text-2); }
+  .recap li b { color: var(--text); }
+  .recap .chip { width: 26px; height: 26px; border-radius: 8px; margin-top: 1px; }
+  .end-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+  details.built { border-top: 1px solid var(--border); padding-top: 14px; }
+  details.built summary { cursor: pointer; font-weight: 750; font-size: 14px; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.built summary::-webkit-details-marker { display: none; }
+  details.built summary .chev { transition: transform .2s; }
+  details.built[open] summary .chev { transform: rotate(90deg); }
+  details.built ul { margin: 12px 0 0; padding-left: 18px; color: var(--text-2); font-size: 14px; line-height: 1.6; }
+  details.built code { font-family: var(--mono); font-size: 12.5px; }
+
+  /* ---------- mobile: guide becomes a bottom sheet ---------- */
+  @media (max-width: 819px) {
+    :root { --bar-h: 46px; }
+    #tour, #tour.guide-collapsed {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: var(--bar-h) minmax(0, 1fr) auto;
+      grid-template-areas: "bar" "stage" "guide";
+    }
+    #tour.guide-collapsed #guide { display: flex; }
+    .demo-tag { display: none; }
+    .t-bar { padding: 0 10px 0 12px; gap: 8px; }
+    .t-bar .btn .lbl-long { display: none; }
+    #guide {
+      border-left: 0; border-top: 1px solid var(--border); max-height: 42vh; max-height: 42dvh;
+      border-radius: 16px 16px 0 0; box-shadow: 0 -12px 30px -14px rgba(30, 35, 60, 0.3);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .g-scroll { padding: 12px 16px 4px; }
+    .g-head { margin-bottom: 10px; }
+    .g-bar { margin-bottom: 12px; }
+    .g-title { font-size: 19px; margin-bottom: 4px; }
+    .g-text { font-size: 14px; margin-bottom: 10px; }
+    .g-context { display: none; }
+    .g-status { min-height: 0; margin-top: 8px; }
+    .g-foot { padding: 8px 12px 10px; gap: 8px; }
+    .g-keys { display: none; }
+    .g-dots { display: none; }
+    /* Collapsed sheet = one single-line strip: "Step N of M" + Next. */
+    #tour.guide-collapsed .g-scroll, #tour.guide-collapsed .g-foot { display: none; }
+    #tour.guide-collapsed .g-strip { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+    .g-strip-open { flex: 1; min-width: 0; min-height: 36px; text-align: left; border: 0; background: transparent; color: var(--text); font-size: 13.5px; font-weight: 700; padding: 0 4px; cursor: pointer; border-radius: var(--r-sm); font-variant-numeric: tabular-nums; }
+    .g-strip-open span { color: var(--brand-text); }
+    #g-pill { display: none !important; }
+    #end { padding: 16px; }
+    .end-card { padding: 20px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    .spin { animation: spin 1.6s linear infinite !important; animation-duration: 1.6s !important; animation-iteration-count: infinite !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =====================================================================
+     LANDING
+     ===================================================================== -->
+<main id="landing" aria-labelledby="hero-title">
+  <div class="l-wrap">
+    <div class="l-top">
+      <span class="wordmark"><span class="mark" data-icon="leaf"></span>Forager</span>
+      <span class="note">Interactive demo · fictional sample data · no live services</span>
+    </div>
+
+    <section class="hero">
+      <span class="pill"><span data-icon="play" data-size="12"></span>Guided walkthrough · about 4 minutes</span>
+      <h1 id="hero-title">Supplier documents, from inbox to <span class="soft">filed record</span>.</h1>
+      <p class="lede">A QA manager's inbox fills with supplier certificates. Forager reads each one, checks it against your checklist, and files it only after a person approves.</p>
+      <p class="sub">When an auditor asks who accepted a document and why, there's rarely an answer. Forager records the decision and the reason. You'll use the real app, with fictional suppliers and sample documents.</p>
+      <div class="cta-row">
+        <button type="button" class="btn primary lg" id="start-btn">
+          <span class="spin" aria-hidden="true"></span>
+          <span id="start-label">Start the walkthrough</span>
+          <span data-icon="arrowRight" data-size="18"></span>
+        </button>
+        <a class="btn ghost lg" href="app/" id="explore-link">Explore the app on your own</a>
+        <span class="meta">No signup, nothing to install</span>
+      </div>
+      <div class="l-error" id="l-error" hidden></div>
+    </section>
+
+    <p class="trio-lead"><b>Three separate authorities, on purpose.</b> No single one is trusted to wave through a real compliance gap.<span class="def">LLM — the AI model that reads documents.</span></p>
+    <div class="trio">
+      <div class="card">
+        <div class="k"><span class="chip" style="background:var(--brand)" data-icon="scan" data-size="16" data-color="#fff"></span>01</div>
+        <h3>The LLM reads.</h3>
+        <p>It filters out junk mail, classifies each attachment, extracts the fields, and reports what it found against your checklist.</p>
+      </div>
+      <div class="card">
+        <div class="k"><span class="chip" style="background:var(--accent)" data-icon="checklist" data-size="16" data-color="#fff"></span>02</div>
+        <h3>The code judges.</h3>
+        <p>A fixed rule turns those findings into Pass, Advisory, or Issues, using severities you set. The model never grades itself.</p>
+      </div>
+      <div class="card">
+        <div class="k"><span class="chip" style="background:var(--amber)" data-icon="users" data-size="16" data-color="#fff"></span>03</div>
+        <h3>The human decides.</h3>
+        <p>Nothing is filed until a person approves it. Overriding a failed check takes a written reason, and it's logged.</p>
+      </div>
+    </div>
+
+    <section class="l-section" aria-labelledby="problem-title">
+      <div class="eyebrow">The problem</div>
+      <h2 id="problem-title">Supplier paperwork is chased by hand.</h2>
+      <p>Certificates, statements, and specs arrive by email in whatever format each supplier prefers. Someone has to open every one, identify it, and decide whether it's complete.</p>
+      <div class="problems">
+        <div class="card"><span class="chip" style="background:var(--red)" data-icon="flag" data-size="15" data-color="#fff"></span><div><h4>Errors slip through</h4><p>Not from carelessness. From volume, and no time to check every field.</p></div></div>
+        <div class="card"><span class="chip" style="background:var(--amber)" data-icon="route" data-size="15" data-color="#fff"></span><div><h4>Records fragment</h4><p>Company and ingredient names drift in spelling from one email to the next.</p></div></div>
+        <div class="card"><span class="chip" style="background:var(--amber)" data-icon="clock" data-size="15" data-color="#fff"></span><div><h4>Review is slow</h4><p>One document at a time, and expiry dates live in someone's memory.</p></div></div>
+        <div class="card"><span class="chip" style="background:var(--red)" data-icon="search" data-size="15" data-color="#fff"></span><div><h4>No record of the call</h4><p>Who approved what, and on what grounds, usually lives in someone's inbox.</p></div></div>
+      </div>
+    </section>
+
+    <section class="l-section" aria-labelledby="flow-title">
+      <div class="eyebrow">The pipeline</div>
+      <h2 id="flow-title">Seven stages, one human gate.</h2>
+      <p>Every document takes the same path before it's treated as an accepted record.</p>
+      <ol class="flow" id="flow" style="list-style:none;margin:0;padding:0"></ol>
+      <div class="flow-note"><span data-icon="shield" data-size="16" data-color="var(--amber)"></span><span>Until a reviewer approves it, a document is held in a review folder: visible, but not yet filed.</span></div>
+    </section>
+
+    <div class="l-foot">
+      <span>Fictional suppliers and documents. Runs entirely in your browser: no email, storage, or AI calls.</span>
+      <a href="#" id="start-link">Start the walkthrough →</a>
+    </div>
+  </div>
+</main>
+
+<!-- =====================================================================
+     TOUR
+     ===================================================================== -->
+<div id="tour" aria-hidden="true">
+  <header class="t-bar">
+    <span class="wordmark"><span class="mark" data-icon="leaf" data-size="15"></span>Forager</span>
+    <span class="demo-tag">Interactive demo · fictional sample data · no live services</span>
+    <span class="spacer"></span>
+    <button type="button" class="btn small ghost" id="restart-btn"><span data-icon="restart" data-size="14"></span><span>Restart<span class="lbl-long"> demo</span></span></button>
+    <button type="button" class="btn small ghost" id="overview-btn"><span data-icon="home" data-size="14"></span><span class="lbl-long">Overview</span></button>
+  </header>
+
+  <div class="stage" id="stage">
+    <iframe id="app-frame" title="Forager app (interactive demo)" src="about:blank"></iframe>
+    <div id="spot-layer" aria-hidden="true"><div id="spot"></div><div id="tap"></div></div>
+    <div class="stage-overlay" id="loading" hidden>
+      <div class="loader"><span class="spin" aria-hidden="true"></span><span id="loading-msg">Loading the app…</span></div>
+    </div>
+    <div id="g-pill" hidden>
+      <button type="button" class="btn primary small" id="g-pill-expand"><span class="dotc"></span><span id="g-pill-label">Show guide</span></button>
+      <button type="button" class="btn ghost small" id="g-pill-next">Next <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+
+  <aside id="guide" aria-label="Walkthrough guide">
+    <div class="g-scroll">
+      <div class="g-head">
+        <div class="g-eyebrow"><span class="ic" id="g-icon"></span><span id="g-page">Dashboard</span><span class="pg" id="g-pagecount"></span></div>
+        <button type="button" class="icon-btn" id="g-collapse" aria-label="Hide guide" aria-expanded="true" title="Hide guide (Esc)"></button>
+      </div>
+      <div class="g-bar" role="progressbar" aria-label="Walkthrough progress" aria-valuemin="1" id="g-bar"><span id="g-bar-fill"></span></div>
+      <div class="g-body" id="g-body">
+        <p class="g-context" id="g-context"></p>
+        <div id="g-narr" aria-live="polite" aria-atomic="true">
+          <h2 class="g-title" id="g-title"></h2>
+          <p class="g-text" id="g-text"></p>
+        </div>
+        <div class="g-cta" id="g-cta" hidden></div>
+      </div>
+      <p class="g-status" id="g-status" role="status"></p>
+    </div>
+    <div class="g-foot">
+      <div class="g-nav">
+        <button type="button" class="btn ghost" id="g-prev"><span aria-hidden="true">←</span> Back</button>
+        <span class="g-step" id="g-step" aria-hidden="true">Step 1</span>
+        <button type="button" class="btn primary" id="g-next"><span class="spin" aria-hidden="true"></span><span id="g-next-label">Next</span><span class="lbl-arrow" aria-hidden="true">→</span></button>
+      </div>
+      <nav class="g-dots" id="g-dots" aria-label="Walkthrough sections"></nav>
+      <p class="g-keys"><kbd>←</kbd> <kbd>→</kbd> to move · <kbd>Esc</kbd> to hide · or click in the app yourself</p>
+    </div>
+    <div class="g-strip" id="g-strip">
+      <button type="button" class="g-strip-open" id="g-strip-open" aria-label="Show guide"><span id="g-strip-label">Step 1 of 1</span> · Show guide</button>
+      <button type="button" class="btn primary small" id="g-strip-next">Next <span aria-hidden="true">→</span></button>
+    </div>
+  </aside>
+
+  <div id="end" hidden role="dialog" aria-modal="true" aria-labelledby="end-title"></div>
+</div>
+
+<svg id="connector" aria-hidden="true"><line id="c-line" x1="0" y1="0" x2="0" y2="0"/><circle id="c-dot" r="3.5" cx="0" cy="0"/></svg>
+
+<script>
+(() => {
+'use strict';
+
+/* Optional call to action on the end screen. The primary button renders only when href is set
+   (http, https, or mailto). Example:
+   const CONTACT = { label: 'Talk to the team', href: 'mailto:you@example.com' }; */
+const CONTACT = { label: '', href: '' };
+
+/* =========================================================================
+   Icons (lucide-style strokes, inline, no dependencies)
+   ========================================================================= */
+const ICONS = {
+  mail: '<path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/>',
+  scan: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  checklist: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 16"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 19c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15.7 13.7c2.6.3 4.8 2 4.8 4.8"/>',
+  shield: '<path d="M12 3 4.5 6v6c0 5 3.4 7.7 7.5 9 4.1-1.3 7.5-4 7.5-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  flag: '<path d="M5 21V4"/><path d="M5 4h13l-3.5 4.5L18 13H5"/>',
+  route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.3 16.5 15.7 7.5"/>',
+  arrowRight: '<path d="M4 12h16"/><path d="m13 5 7 7-7 7"/>',
+  chevRight: '<path d="m9 6 6 6-6 6"/>',
+  minus: '<path d="M5 12h14"/>',
+  layers: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
+  dollar: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+  play: '<polygon points="7 4 20 12 7 20" fill="currentColor" stroke="none"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  factory: '<path d="M2 20V9l6 4V9l6 4V4h6v16z"/><path d="M6 17h2M11 17h2M16 17h2"/>',
+  files: '<path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 3v5h5"/>',
+  inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
+  home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  restart: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.2-6.1C9.5 14.5 12 13 13 12"/>',
+  sparkles: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
+};
+function icon(name, size = 18, color = 'currentColor', sw = 1.9) {
+  return `<svg class="i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+document.querySelectorAll('[data-icon]').forEach((el) => {
+  el.innerHTML = icon(el.dataset.icon, +(el.dataset.size || 16), el.dataset.color || 'currentColor', 2);
+});
+
+/* Landing: seven stages, one human gate. */
+const FLOW = [
+  ['Supplier inbox', 'Unread mail with attachments', ''],
+  ['Relevance filter', 'LLM reads', 'llm'],
+  ['Classify & extract', 'LLM reads', 'llm'],
+  ['Held for review, not filed', 'Code', 'code'],
+  ['Checklist validation', 'LLM reads · code judges', 'code'],
+  ['Human review', 'The human decides', 'human'],
+  ['Filed & logged', 'Audit trail', 'code'],
+];
+document.getElementById('flow').innerHTML = FLOW.map(([lbl, who, cls], i) =>
+  `<li class="card stage-card${cls === 'human' ? ' gate' : ''}"><div class="n">${String(i + 1).padStart(2, '0')}</div><div class="lbl">${lbl}</div><div class="who ${cls}">${who}</div></li>`
+).join('');
+
+/* =========================================================================
+   Tour script. Every selector / button text below was checked against
+   frontend/src (see demo-site/README.md for the source map). Target specs:
+     { sel, text, exact, contains, has, within, index, nav, any:[..], union:[..] }
+   - text: button label (normalized textContent startsWith, or === with exact)
+   - contains: substring(s) of textContent (string or array; may be a function of vars)
+   - nav: a sidebar label, resolved via .sidebar-tab
+   Beat actions run when the viewer presses Next (or are skipped if the viewer
+   already did them). `once` marks a mutating beat so replays never double-act.
+   ========================================================================= */
+const PAGES = [
+  { key: 'dashboard', nav: 'Dashboard', title: 'Dashboard', icon: 'layers', sub: 'Where a QA lead starts the day.' },
+  { key: 'live', nav: 'Live Run', title: 'Live Run', icon: 'scan', sub: 'A watched run, not a silent background job.' },
+  { key: 'queue', nav: 'Review Queue', title: 'Review Queue', icon: 'inbox', sub: 'The human gate. Nothing files itself.' },
+  { key: 'types', nav: 'Document Types', title: 'Document Types', icon: 'checklist', sub: 'Where validation rules come from. The LLM drafts, you own.' },
+  { key: 'companies', nav: 'Companies', title: 'Companies', icon: 'factory', sub: 'Same supplier, spelled two ways. Never merged quietly.' },
+  { key: 'usage', nav: 'Token Usage', title: 'Token Usage', icon: 'dollar', sub: 'Each AI call has a small cost, shown live.' },
+  { key: 'notices', nav: 'Notices', title: 'Notices', icon: 'bell', sub: 'Everything that needs a second look.' },
+  { key: 'email', nav: 'Email History', title: 'Email History', icon: 'send', sub: 'The fix often starts with an email.' },
+  { key: 'index', nav: 'Document Index', title: 'Document Index', icon: 'files', sub: 'The accepted record.' },
+];
+const P = Object.fromEntries(PAGES.map((p, i) => [p.key, i]));
+
+const chip = (contains) => ({ sel: '.rq-chip', contains });
+const chipSelected = (contains) => ({ sel: '.rq-chip.selected', contains });
+const footerBtn = (text) => ({ within: { sel: '.rq-card-footer' }, text });
+const modalWith = (title) => ({ sel: '.modal', has: '.modal-title', contains: title });
+const selectChip = (contains, cardTitle) => ({
+  do: 'click', target: chip(contains), skipIf: chipSelected(contains),
+  until: { sel: '.rq-card .card-title', contains: cardTitle },
+});
+const OVERRIDE_REASON = 'Supplier confirmed by phone that the new certificate numbering format is valid.';
+const failRow = (sev) => ({ sel: '.checklist-result-row', has: `.checklist-result-icon.${sev}` });
+
+const BEATS = [
+  /* ---------------- Dashboard ---------------- */
+  { page: P.dashboard, lead: 'Problems surface on their own',
+    rest: 'Counts of what has cleared review, what is pending, and what was rejected sit beside notices for missing checklists, near-duplicate names, and expiring documents. Scores and counts here are sample values, not measured accuracy.',
+    target: { union: [{ sel: '.card-validated' }, { sel: '.card-notices' }] }, cta: 'Next opens Live Run' },
+
+  /* ---------------- Live Run ---------------- */
+  { page: P.live, lead: 'Check the supplier inbox',
+    rest: 'One click scans up to five unread emails with attachments from the last month. This run is replayed from sample data — no AI is called in this demo.',
+    target: { any: [{ within: { sel: '.live-run-empty' }, text: 'Run once' }, { sel: '.page-header .btn.primary' }] },
+    cta: 'Next clicks Run once', busy: 'Starting the run…', once: 'run',
+    actions: [{ do: 'click', target: { within: { sel: '.live-run-empty' }, text: 'Run once' }, skipIf: { sel: '.timeline' }, until: { sel: '.timeline' } }] },
+  { page: P.live, lead: 'Every stage, streamed and priced',
+    rest: 'Each email moves through a relevance check, classify and extract, validation, and a draft report. Each AI call has a small cost, shown live in the counter.',
+    target: { any: [{ sel: '.live-run-emails' }, { sel: '.timeline' }] }, wait: 15000 },
+  { page: P.live, lead: 'Junk stops early, failures stay isolated',
+    rest: "A trade-show promo fails the cheap relevance check first and is left unread. Later, an unreadable phone photo fails on its own while the PDF in the same email carries on.",
+    target: { sel: '.live-run-email', has: '.timeline-dot.skipped' }, wait: 25000,
+    cta: 'Next opens Review Queue', busy: 'Finishing the run…',
+    actions: [{ do: 'wait', target: { any: [{ sel: '.run-result' }, { sel: '.live-run-page .error-banner' }] }, timeout: 60000, skipUnless: { sel: '.live-run-page .timeline' }, optional: true }] },
+
+  /* ---------------- Review Queue ---------------- */
+  { page: P.queue, lead: 'Nothing files itself', replaySkip: true,
+    rest: "New documents wait here, held in a review folder and not yet filed, until a person approves them. Let's open Riverside's certificate.",
+    target: { any: [{ sel: '.rq-filmstrip' }, { sel: '.rq-card' }] }, wait: 12000, cta: 'Next opens the CoA',
+    actions: [
+      selectChip('Riverside', 'Riverside'),
+      { do: 'capture', key: 'coaFile', target: { sel: '.rq-card .card-meta' }, parse: (t) => t.split(' · ').pop().trim() },
+      { do: 'click', target: { sel: '.rq-disclosure-toggle' }, skipIf: { sel: '.rq-disclosure-body' }, optional: true },
+    ] },
+  { page: P.queue, lead: 'The LLM reads, the code judges',
+    rest: 'The LLM reports each checklist item as present, missing, or mismatched. Then fixed code applies the severities from your checklist: any critical miss is Issues, any advisory miss is Advisory, otherwise Pass.',
+    target: { union: [{ any: [{ sel: '.rq-disclosure' }, { sel: '.rq-card-scroll' }] }, { sel: '.rq-card-status-row' }] } },
+  { page: P.queue, lead: 'Clean pass. File it.',
+    rest: 'Approving moves it out of the review folder and into its real company and ingredient folder.',
+    target: { any: [{ sel: '.rq-target-box' }, footerBtn('Approve & file')] },
+    cta: 'Next clicks Approve & file', once: 'approve-coa',
+    actions: [
+      selectChip('Riverside', 'Riverside'),
+      { do: 'assert', target: chipSelected('Riverside') },
+      { do: 'click', target: footerBtn('Approve & file'), after: 500 },
+    ],
+    then: [selectChip('Coastal', 'Coastal')] },
+  { page: P.queue, lead: 'Advisory: approvable, with a reason', replaySkip: true,
+    rest: "The CoA is filed. This kosher certificate's number format looks off (highlighted in the checklist): advisory, not critical.",
+    target: { any: [failRow('advisory'), { sel: '.rq-card-status-row' }] }, cta: 'Next clicks Approve & file',
+    actions: [
+      selectChip('Coastal', 'Coastal'),
+      { do: 'assert', target: chipSelected('Coastal') },
+      { do: 'click', target: footerBtn('Approve & file'), skipIf: modalWith('Approve without a clean pass'), until: modalWith('Approve without a clean pass') },
+    ] },
+  { page: P.queue, lead: 'Overrides need a written reason',
+    rest: "Approving without a clean pass needs a reason, and the server enforces that too. It's recorded in the audit log under your name (the demo doesn't display the log).",
+    target: modalWith('Approve without a clean pass'), cta: 'Next types a reason and approves',
+    once: 'approve-kosher',
+    actions: [
+      { do: 'type', target: { within: modalWith('Approve without a clean pass'), sel: 'textarea' }, value: OVERRIDE_REASON, skipIfFilled: true },
+      { do: 'click', target: { within: modalWith('Approve without a clean pass'), text: 'Approve anyway' }, after: 600 },
+    ],
+    then: [selectChip('Meridian', 'Meridian')] },
+  { page: P.queue, lead: 'Issues: a critical gap', replaySkip: true,
+    rest: 'The allergen statement has no authorized signature. That field is critical, so code marks it Issues.',
+    target: { any: [failRow('critical'), { sel: '.rq-disclosure' }, { sel: '.rq-card-status-row' }] }, cta: 'Next clicks Reject',
+    actions: [
+      selectChip('Meridian', 'Meridian'),
+      { do: 'assert', target: chipSelected('Meridian') },
+      { do: 'click', target: footerBtn('Reject'), skipIf: modalWith('Reject this document?'), until: modalWith('Reject this document?') },
+      { do: 'pick', target: { sel: '.reject-reason-select' }, value: 'Needs supplier follow-up' },
+    ] },
+  { page: P.queue, lead: 'Reject, with a reason',
+    rest: 'Rejected documents go to quarantine, not the trash. They can be corrected, re-filed, or followed up.',
+    target: modalWith('Reject this document?'), cta: 'Next confirms the rejection', once: 'reject-allergen',
+    actions: [
+      { do: 'pick', target: { sel: '.reject-reason-select' }, value: 'Needs supplier follow-up', optional: true },
+      { do: 'click', target: { within: modalWith('Reject this document?'), sel: '.confirm-modal-primary' }, after: 600 },
+    ],
+    then: [selectChip('Non-GMO', 'Highland')] },
+  { page: P.queue, lead: 'No checklist, no verdict', replaySkip: true,
+    rest: "Nobody has defined a Non-GMO checklist yet, so this can't pass. You can fix that right here.",
+    target: { any: [{ sel: '.rq-disclosure-empty', has: '.rq-match-btn' }, { sel: '.rq-card-status-row' }] },
+    cta: 'Next starts a new checklist',
+    actions: [
+      selectChip('Non-GMO', 'Highland'),
+      { do: 'click', target: { sel: '.rq-match-btn' }, skipIf: { any: [{ sel: '.rq-match-backdrop' }, modalWith('Create a checklist')] }, until: { sel: '.rq-match-backdrop .modal' } },
+      { do: 'click', target: { within: { sel: '.rq-match-backdrop' }, text: 'Create new instead' }, skipIf: modalWith('Create a checklist'), until: modalWith('Create a checklist') },
+    ] },
+  { page: P.queue, lead: 'Let the LLM draft it — you own it',
+    rest: 'The LLM drafts required fields and rules from this very document. Each item is marked critical or advisory, and every line is editable before you use it. Nothing applies until you approve.',
+    target: modalWith('Create a checklist'), cta: 'Next clicks Generate checklist', busy: 'Drafting the checklist…', once: 'generate-checklist',
+    actions: [{ do: 'click', target: { within: modalWith('Create a checklist'), text: 'Generate checklist' }, until: { sel: '.dt-draft-summary' }, untilTimeout: 25000 }] },
+  { page: P.queue, lead: 'Does this document expire?',
+    rest: 'This Non-GMO statement carries no expiry date, so the answer is No. Programs that re-request yearly can set a renewal interval.',
+    target: { any: [{ sel: '.dt-expiration-detected' }, { sel: '.dt-expiration' }, { sel: '.dt-draft-summary' }] }, wait: 8000,
+    cta: 'Next answers No and saves', busy: 'Matching and validating…', once: 'use-checklist',
+    actions: [
+      { do: 'click', target: { within: { sel: '.dt-expiration-detected' }, text: 'Not this field' }, skipUnless: { sel: '.dt-expiration-detected' }, optional: true, after: 250 },
+      { do: 'click', target: { within: { sel: '.dt-expiration-toggle' }, text: 'No', exact: true }, after: 450 },
+      { do: 'click', target: { within: modalWith('Review the generated checklist'), text: 'Use this checklist' }, until: { sel: '.rq-match-result' }, untilTimeout: 20000 },
+    ] },
+  { page: P.queue, lead: 'Same document, now passing',
+    rest: 'Drafted from this document, so it passes by construction. In practice you draft from reference documents you designate, then new arrivals are judged against it.',
+    target: { any: [{ sel: '.rq-match-result' }, { sel: '.rq-card-status-row' }] }, wait: 6000, cta: 'Next opens Document Types',
+    actions: [{ do: 'click', target: { within: { sel: '.rq-match-result' }, text: 'Done' }, optional: true, after: 300 }] },
+
+  /* ---------------- Document Types ---------------- */
+  { page: P.types, lead: 'One checklist per document type',
+    rest: "Each type has its own required fields and format rules. Let's open the CoA checklist.",
+    target: { any: [{ sel: '.dt-list' }, { sel: '.dt-card' }] }, cta: 'Next opens Certificate of Analysis',
+    actions: [{ do: 'click', target: { sel: '.dt-row', contains: 'Certificate of Analysis' }, skipIf: { sel: '.dt-modal-head' }, until: { sel: '.dt-modal-head' } }] },
+  { page: P.types, lead: 'Severity drives the outcome',
+    rest: 'Each item is critical or advisory. That setting, not the model, decides Issues versus Advisory. Sample documents of this type sit beside the checklist. In production these are the reference documents you designate.',
+    target: { any: [{ sel: '.dt-schema-list' }, { sel: '.dt-docs-panel' }, { sel: '.dt-modal-head' }] }, cta: 'Next closes it',
+    actions: [{ do: 'click', target: { within: { sel: '.dt-modal-head' }, text: 'Close' }, optional: true, after: 300 }] },
+  { page: P.types, lead: 'Editable, and safely deletable',
+    rest: 'Change any checklist anytime. Deleted ones wait in Trash for 30 days before they are gone.',
+    target: { any: [{ within: { sel: '.dt-header-actions' }, text: 'Trash' }, { sel: '.dt-card' }] }, cta: 'Next opens Companies' },
+
+  /* ---------------- Companies ---------------- */
+  { page: P.companies, lead: 'Same supplier, spelled two ways',
+    rest: '“Coastal Cane Sugar Company” is likely Coastal Cane Sugar Co., shown with a confidence score and never merged quietly. Ingredient names drift the same way, and those variants wait for a human decision.',
+    target: { any: [{ sel: '.company-matches', contains: 'Possible matches' }, { sel: '.company-panel' }] },
+    cta: 'Next clicks Confirm', once: 'confirm-company',
+    actions: [{ do: 'click', target: { within: { within: { sel: '.company-matches', contains: 'Possible matches' }, sel: '.company-match-row', contains: 'Coastal' }, text: 'Confirm' }, after: 500 }],
+    then: [{ do: 'click', target: { sel: '.company-card', contains: 'Coastal Cane' }, skipIf: { sel: '.company-info-window' }, until: { sel: '.company-info-window' }, optional: true }] },
+  { page: P.companies, lead: 'Everything about one supplier',
+    rest: 'Contact email, known aliases, and every filed document, in one place.',
+    target: { any: [{ sel: '.company-info-window' }, { sel: '.company-panel' }] }, cta: 'Next opens Token Usage',
+    actions: [{ do: 'click', target: { within: { sel: '.company-info-window' }, text: 'Close' }, optional: true, after: 300 }] },
+
+  /* ---------------- Token Usage ---------------- */
+  { page: P.usage, lead: 'What each AI call costs',
+    rest: 'Usage is counted in tokens, the units of text a model reads and writes, and priced per call. Totals are broken out by pipeline stage and by person, so spend is never anonymous.',
+    target: { union: [{ sel: '.card-usage-total' }, { sel: '.card-usage-stage' }, { sel: '.card-usage-actor' }] }, cta: 'Next opens Notices' },
+
+  /* ---------------- Notices ---------------- */
+  { page: P.notices, lead: 'Loose ends and disagreements, in one place',
+    rest: "Doc types missing a checklist and ingredient matches awaiting review collect here automatically. So do values that disagree, like a company address that differs across a supplier's filed documents (highlighted): flagged, never blocked.",
+    target: { any: [{ sel: '.notices-section', contains: 'Inconsistent values' }, { sel: '.notices-section' }] } },
+  { page: P.notices, lead: 'Overdue, caught automatically',
+    rest: "Riverside's annual heavy-metals retest came due three days ago. Nobody had to remember to check.",
+    target: { any: [{ within: { sel: '.notices-section', contains: 'Expiring' }, sel: '.notice-row', contains: 'Riverside' }, { sel: '.notices-section', contains: 'Expiring' }] },
+    cta: 'Next opens it and drafts a request',
+    actions: [
+      { do: 'click', target: { within: { sel: '.notices-section', contains: 'Expiring' }, sel: '.notice-row', contains: 'Riverside' }, skipIf: { sel: '.di-modal' }, until: { sel: '.di-modal-header' }, untilTimeout: 8000 },
+      { do: 'click', target: { within: { sel: '.di-modal-header' }, text: 'Request updated document' }, skipIf: { sel: '.rdm-body' }, until: { sel: '.rdm-body' } },
+    ] },
+  { page: P.notices, lead: 'A follow-up, pre-written',
+    rest: 'Edit anything first. Nothing goes out until someone clicks Send. In this demo nothing is actually sent: the request is drafted and marked sent (simulated).',
+    target: { any: [modalWith('Request updated document'), { sel: '.di-modal-header' }] },
+    cta: 'Next clicks Send', once: 'send-request',
+    actions: [
+      { do: 'click', target: { within: modalWith('Request updated document'), text: 'Send' }, after: 700 },
+    ],
+    then: [{ do: 'click', target: { within: { sel: '.di-modal-header' }, text: 'Close' }, skipIf: { sel: '.rdm-body' }, optional: true, after: 250 }] },
+
+  /* ---------------- Email History ---------------- */
+  { page: P.email, lead: 'Every request, tracked',
+    rest: 'Grouped by supplier and ingredient: sent, failed with a one-click retry, or still a draft.',
+    target: { any: [{ sel: '.eh-list-pane' }, { sel: '.eh-panel' }] }, wait: 4000, cta: 'Next opens your simulated request',
+    actions: [{ do: 'click', target: { sel: '.eh-list-row', contains: 'Heavy Metals' }, optional: true, after: 200 }] },
+  { page: P.email, lead: 'Threaded and on file',
+    rest: "The full email is kept. When the document arrived by email, the request goes out as a reply on the supplier's original thread.",
+    target: { any: [{ sel: '.eh-detail-pane' }, { sel: '.eh-panel' }] }, cta: 'Next opens Document Index' },
+
+  /* ---------------- Document Index ---------------- */
+  { page: P.index, lead: 'Filed, and findable',
+    rest: 'The CoA you approved minutes ago is now in the index, searchable by company, ingredient, or type.',
+    pre: [{ do: 'type', target: { within: { sel: '.filter-row' }, sel: 'input.input' }, value: (v) => v.coaFile || 'Riverside', instant: false }],
+    target: { any: [
+      { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: (v) => v.coaFile || 'Certificate of Analysis' },
+      { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: 'Riverside' },
+      { sel: '.di-table-frame' }] }, wait: 6000, cta: 'Next opens it',
+    actions: [
+      { do: 'wait', settle: 700, optional: true, timeout: 8000, target: { any: [
+        { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: (v) => v.coaFile || 'Certificate of Analysis' },
+        { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: 'Riverside' }] }, skipIf: { sel: '.di-modal' } },
+      { do: 'click', retry: 2, target: { any: [
+        { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: (v) => v.coaFile || 'Certificate of Analysis' },
+        { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: 'Riverside' }] }, skipIf: { sel: '.di-modal' }, until: { sel: '.di-modal' }, untilTimeout: 2500, optional: true }] },
+  { page: P.index, lead: 'It got here one way',
+    rest: 'This is its real folder path. It only arrived because a person approved it, and the approval is recorded in the audit log.',
+    target: { any: [{ sel: '.di-detail-collapse.open .di-detail-meta-path' }, { sel: '.di-detail-collapse.open .di-list-row-detail' }, { sel: '.di-modal' }] },
+    cta: 'Next: the wrap-up' },
+];
+const N = BEATS.length;
+
+/* =========================================================================
+   DOM refs and state
+   ========================================================================= */
+const $ = (id) => document.getElementById(id);
+const landing = $('landing'), tour = $('tour'), frame = $('app-frame');
+const spot = $('spot'), tap = $('tap'), spotLayer = $('spot-layer'), stageEl = $('stage');
+const loadingEl = $('loading'), loadingMsg = $('loading-msg');
+const gBody = $('g-body'), gTitle = $('g-title'), gText = $('g-text'), gContext = $('g-context'), gCta = $('g-cta');
+const gPage = $('g-page'), gPageCount = $('g-pagecount'), gIcon = $('g-icon'), gStatus = $('g-status');
+const gStep = $('g-step'), gBar = $('g-bar'), gBarFill = $('g-bar-fill'), gDots = $('g-dots');
+const btnNext = $('g-next'), btnPrev = $('g-prev'), btnNextLabel = $('g-next-label'), btnCollapse = $('g-collapse');
+const pill = $('g-pill'), pillLabel = $('g-pill-label'), pillNext = $('g-pill-next'), pillExpand = $('g-pill-expand');
+const gStrip = $('g-strip'), stripNext = $('g-strip-next'), stripOpen = $('g-strip-open'), stripLabel = $('g-strip-label');
+const endEl = $('end'), cLine = $('c-line'), cDot = $('c-dot');
+const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+// The app honours ?theme=light|dark, so app and shell agree with the visitor's system setting.
+const APP_URL = `app/?embedded=1&theme=${darkMQ.matches ? 'dark' : 'light'}`;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const narrowMQ = window.matchMedia('(max-width: 819px)');
+const CANCEL = Symbol('cancel');
+
+const S = {
+  cur: -1,             // current beat index
+  busy: false,         // an action sequence is in flight
+  epoch: 0,            // bumped on restart; cancels everything in flight
+  spotGen: 0,          // bumped per render; cancels stale spotlight lookups
+  done: new Set(),     // `once` keys already performed (cleared on restart)
+  vars: {},            // values captured from the app (e.g. the CoA filename)
+  userFrom: null,      // { beat, from }: the viewer did action(s) themselves
+  autoTimer: 0,
+  started: false,
+  collapsed: false,
+  ended: false,
+  track: null,         // { spec, els, lastResolve, visible }
+  navByTourAt: 0,
+  weCollapsedSidebar: false,
+  frameLoadedOnce: false,
+  glideT: 0,
+};
+
+/* =========================================================================
+   Iframe helpers
+   ========================================================================= */
+function fdoc() { try { return frame.contentDocument; } catch { return null; } }
+function fwin() { try { return frame.contentWindow; } catch { return null; } }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const norm = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
+const val = (x) => (typeof x === 'function' ? x(S.vars) : x);
+
+function isVisible(el) {
+  if (!el || !el.isConnected) return false;
+  const r = el.getBoundingClientRect();
+  if (r.width < 1 || r.height < 1) return false;
+  const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+  return cs.visibility !== 'hidden' && cs.display !== 'none';
+}
+
+function findNav(label) {
+  const d = fdoc();
+  if (!d) return null;
+  const tabs = [...d.querySelectorAll('.sidebar-tab, .tabs .tab')];
+  return tabs.find((b) => {
+    const l = b.querySelector('.sidebar-tab-label');
+    return (l ? l.textContent.trim() : norm(b)) === label;
+  }) || tabs.find((b) => norm(b).startsWith(label)) || null;
+}
+
+function resolveAll(spec, root) {
+  const d = fdoc();
+  if (!spec || !d) return [];
+  if (typeof spec === 'string') spec = { sel: spec };
+  if (spec.any) {
+    for (const s of spec.any) { const r = resolveAll(s, root); if (r.length) return r; }
+    return [];
+  }
+  if (spec.nav) { const n = findNav(spec.nav); return n ? [n] : []; }
+  let roots = [root || d];
+  if (spec.within) {
+    const w = resolveAll(spec.within, root);
+    if (!w.length) return [];
+    roots = [w[0]];
+  }
+  let els = [];
+  const sel = spec.sel || spec.tag || (spec.text ? 'button' : null);
+  if (!sel) { els = roots.slice(); }
+  else roots.forEach((r) => { try { els.push(...r.querySelectorAll(sel)); } catch { /* bad selector */ } });
+  if (spec.text) {
+    const t = val(spec.text);
+    els = els.filter((e) => (spec.exact ? norm(e) === t : norm(e).startsWith(t)));
+  }
+  if (spec.contains) {
+    const cs = [].concat(val(spec.contains)).filter(Boolean);
+    els = els.filter((e) => cs.every((c) => (e.textContent || '').includes(c)));
+  }
+  if (spec.has) els = els.filter((e) => e.querySelector(spec.has));
+  els = els.filter((e) => !e.closest('.closing') && (spec.visible === false || isVisible(e)));
+  if (spec.index != null) return els[spec.index] ? [els[spec.index]] : [];
+  return els;
+}
+function resolve(spec) { return resolveAll(spec)[0] || null; }
+function resolveTargets(spec) {
+  if (!spec) return [];
+  if (spec.union) return spec.union.map((s) => resolve(s)).filter(Boolean);
+  const el = resolve(spec);
+  return el ? [el] : [];
+}
+
+function alive(ep) { if (ep !== S.epoch) throw CANCEL; }
+
+async function waitUntil(fn, timeout, ep) {
+  const t0 = performance.now();
+  for (;;) {
+    if (ep != null) alive(ep);
+    let v = null;
+    try { v = fn(); } catch { v = null; }
+    if (v && (!Array.isArray(v) || v.length)) return v;
+    if (performance.now() - t0 >= timeout) return null;
+    await sleep(120);
+  }
+}
+
+/* The part of an element actually on screen: its rect intersected with every
+   clipping ancestor (scroll panes, modals) and the iframe viewport. */
+function visibleRect(el) {
+  const r = el.getBoundingClientRect();
+  let l = r.left, t = r.top, rt = r.right, b = r.bottom;
+  const w = el.ownerDocument.defaultView;
+  for (let p = el.parentElement; p && p !== el.ownerDocument.body; p = p.parentElement) {
+    const cs = w.getComputedStyle(p);
+    if (/(auto|scroll|hidden|clip)/.test(cs.overflowX + cs.overflowY)) {
+      const pr = p.getBoundingClientRect();
+      l = Math.max(l, pr.left); t = Math.max(t, pr.top); rt = Math.min(rt, pr.right); b = Math.min(b, pr.bottom);
+    }
+    if (cs.position === 'fixed') break;
+  }
+  l = Math.max(l, 0); t = Math.max(t, 0); rt = Math.min(rt, w.innerWidth); b = Math.min(b, w.innerHeight);
+  return rt - l < 1 || b - t < 1 ? null : { left: l, top: t, right: rt, bottom: b, width: rt - l, height: b - t, full: r };
+}
+/* Every ancestor that can actually scroll vertically (the app's own panes), innermost first,
+   ending with the document's scroller when that scrolls too. */
+function scrollParentsOf(el) {
+  const d = el.ownerDocument, w = d.defaultView, out = [];
+  for (let p = el.parentElement; p && p !== d.documentElement && p !== d.body; p = p.parentElement) {
+    const cs = w.getComputedStyle(p);
+    if (/(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 2) out.push(p);
+    if (cs.position === 'fixed') return out;
+  }
+  if (d.scrollingElement && d.scrollingElement.scrollHeight > w.innerHeight + 2) out.push(d.scrollingElement);
+  return out;
+}
+/* Brings the target (or the union of several) to the vertical centre of each scroll pane
+   that clips it or has it hugging an edge. Returns true when anything scrolled. */
+function ensureVisible(els, smooth) {
+  const list = (els || []).filter((e) => e && e.isConnected);
+  if (!list.length) return false;
+  const el = list[0], w = el.ownerDocument.defaultView;
+  const parents = scrollParentsOf(el);
+  let moved = 0;
+  for (const sp of parents) {
+    const isDoc = sp === el.ownerDocument.scrollingElement;
+    const cr = isDoc ? { top: 0, bottom: w.innerHeight } : sp.getBoundingClientRect();
+    let top = Infinity, bottom = -Infinity;
+    for (const e of list) { const r = e.getBoundingClientRect(); top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom); }
+    const ch = cr.bottom - cr.top, h = bottom - top, m = 18;
+    const fits = h <= ch - 2 * m;
+    const ok = fits ? top >= cr.top + 8 && bottom <= cr.bottom - m : top >= cr.top && top <= cr.top + ch * 0.4;
+    if (ok) continue;
+    const delta = fits ? (top + bottom) / 2 - (cr.top + cr.bottom) / 2 : top - cr.top - m;
+    const behavior = smooth && !reduceMotion.matches && parents.length === 1 ? 'smooth' : 'auto';
+    try { (isDoc ? w : sp).scrollBy({ top: delta, behavior }); moved++; } catch { /* old engines */ }
+  }
+  return moved > 0;
+}
+function scrollIntoViewIfNeeded(el, smooth) { return ensureVisible([el], smooth); }
+
+/* Waits until the targets stop moving (drawers and modals slide in), so the first measure is the real one. */
+async function settleRects(els, max = 700) {
+  const sig = () => els.map((e) => { const r = e.getBoundingClientRect(); return `${r.left | 0},${r.top | 0},${r.width | 0},${r.height | 0}`; }).join('|');
+  let prev = sig(), same = 0;
+  const t0 = performance.now();
+  while (performance.now() - t0 < max) {
+    await sleep(55);
+    const s = sig();
+    if (s === prev) { if (++same >= 2) return; } else { same = 0; prev = s; }
+  }
+}
+
+/* React-visible value setter: use the iframe's own prototype setter, then
+   dispatch a bubbling input event so React's onChange fires. */
+async function typeInto(el, text, ep, animate = true) {
+  const w = el.ownerDocument.defaultView;
+  const proto = el.tagName === 'TEXTAREA' ? w.HTMLTextAreaElement.prototype
+    : el.tagName === 'SELECT' ? w.HTMLSelectElement.prototype : w.HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+  const set = (v) => { setter.call(el, v); el.dispatchEvent(new w.Event('input', { bubbles: true })); };
+  if (!animate || reduceMotion.matches || text.length < 2) { set(text); el.dispatchEvent(new w.Event('change', { bubbles: true })); return; }
+  const step = Math.max(1, Math.ceil(text.length / 40));
+  for (let i = step; i < text.length + step; i += step) {
+    alive(ep);
+    set(text.slice(0, Math.min(i, text.length)));
+    await sleep(16);
+  }
+  el.dispatchEvent(new w.Event('change', { bubbles: true }));
+}
+
+function showTap(el) {
+  const r = el.getBoundingClientRect();
+  tap.style.left = `${r.left + r.width / 2}px`;
+  tap.style.top = `${r.top + r.height / 2}px`;
+  tap.classList.remove('go');
+  void tap.offsetWidth;
+  tap.classList.add('go');
+}
+
+/* =========================================================================
+   Actions
+   ========================================================================= */
+const cap = (ms, fast) => (fast ? Math.min(ms, 600) : ms);
+async function doAction(a, ep, fast = false) {
+  switch (a.do) {
+    case 'click': {
+      const attempts = (a.retry || 0) + 1;
+      for (let n = 0; n < attempts; n++) {
+        const el = await waitUntil(() => { const e = resolve(a.target); return e && !e.disabled && e.getAttribute('aria-disabled') !== 'true' ? e : null; }, cap(a.timeout ?? 5000, fast), ep);
+        if (!el) return false;
+        if (scrollIntoViewIfNeeded(el, false)) await sleep(60);
+        showTap(el);
+        setSpotOn([el], false);
+        await sleep(reduceMotion.matches ? 60 : fast ? 120 : 260);
+        alive(ep);
+        el.click();
+        if (a.until) {
+          const u = await waitUntil(() => resolve(a.until), fast ? Math.min(a.untilTimeout ?? 8000, 1500) : (a.untilTimeout ?? 8000), ep);
+          if (!u) { if (n < attempts - 1) continue; return false; }
+        }
+        if (a.after) await sleep(fast ? Math.min(a.after, 150) : a.after);
+        return true;
+      }
+      return false;
+    }
+    case 'type': {
+      const el = await waitUntil(() => resolve(a.target), cap(a.timeout ?? 4000, fast), ep);
+      if (!el) return false;
+      const v = String(val(a.value) ?? '');
+      if (a.skipIfFilled && el.value && el.value.trim()) return true;
+      if (el.value === v) return true;
+      if (scrollIntoViewIfNeeded(el, false)) await sleep(60);
+      setSpotOn([el], false);
+      await typeInto(el, v, ep, a.instant !== true && !fast);
+      await sleep(fast ? 60 : 200);
+      return true;
+    }
+    case 'pick': {
+      const root = await waitUntil(() => resolve(a.target), cap(a.timeout ?? 4000, fast), ep);
+      if (!root) return false;
+      const v = val(a.value);
+      if (root.tagName === 'SELECT') { // native select fallback
+        const opt = [...root.options].find((o) => o.value === v || o.textContent.trim() === v);
+        if (opt) await typeInto(root, opt.value, ep, false);
+        return !!opt;
+      }
+      const trigger = root.querySelector('.ui-dropdown-trigger');
+      if (!trigger) return false;
+      if (norm(trigger) === v) return true;
+      setSpotOn([root], false);
+      showTap(trigger);
+      trigger.click();
+      const opt = await waitUntil(() => resolve({ within: { sel: '.ui-dropdown-menu' }, sel: '.ui-dropdown-option', text: v, exact: true }), 2500, ep);
+      if (!opt) { trigger.click(); return false; }
+      await sleep(reduceMotion.matches ? 40 : 320);
+      showTap(opt);
+      opt.click();
+      await sleep(250);
+      return true;
+    }
+    case 'wait': {
+      const el = await waitUntil(() => resolve(a.target), cap(a.timeout ?? 8000, fast), ep);
+      // `settle`: let a debounced refetch finish re-rendering rows before the next action clicks one.
+      if (el && a.settle && !fast) await sleep(a.settle);
+      return !!el;
+    }
+    case 'assert':
+      return !!(await waitUntil(() => resolve(a.target), cap(a.timeout ?? 1500, fast), ep));
+    case 'capture': {
+      const el = resolve(a.target);
+      if (el) { try { const v = a.parse(norm(el)); if (v) S.vars[a.key] = v; } catch { /* ignore */ } }
+      return true;
+    }
+    case 'pause':
+      await sleep(a.ms || 300);
+      return true;
+    default:
+      return true;
+  }
+}
+
+/* Runs a list of actions in order. Each action is skipped if its skipIf
+   target already exists (or skipUnless is missing): this is what makes
+   replays after Back, and viewer-performed clicks, idempotent. A required
+   action that can't find its target aborts the rest of the list: we never
+   click "Approve" on the wrong document. */
+async function runList(list, from, ep, fast = false) {
+  let ok = true;
+  for (let k = from; k < (list || []).length; k++) {
+    alive(ep);
+    const a = list[k];
+    if (a.skipIf && resolve(a.skipIf)) continue;
+    if (a.skipUnless && !resolve(a.skipUnless)) continue;
+    let r = false;
+    try { r = await doAction(a, ep, fast); } catch (e) { if (e === CANCEL) throw e; r = false; }
+    if (!r && !a.optional) { ok = false; break; }
+  }
+  return ok;
+}
+/* `actions` are gated by the beat's `once` key (they change data); `then`
+   always runs afterwards and only moves the UI along (selects the next
+   document, closes a dialog), guarded by its own skipIf checks. */
+/* A "replay" is a beat revisited after the tour already went past a later mutating beat
+   (Back, then Next). Its targets (chips, modals) are usually gone, so it must not wait on them. */
+function laterOnceDone(i) {
+  for (let j = i + 1; j < BEATS.length; j++) { const k = BEATS[j].once; if (k && S.done.has(k)) return true; }
+  return false;
+}
+async function runBeatActions(i, from, ep) {
+  const b = BEATS[i];
+  if (!b) return;
+  const replay = laterOnceDone(i);
+  const ownDone = !!(b.once && S.done.has(b.once));
+  if (b.actions && !ownDone && !(replay && b.replaySkip)) {
+    const ok = await runList(b.actions, from, ep, replay);
+    if (ok && b.once) S.done.add(b.once);
+  }
+  if (b.then && !(replay && b.replaySkip)) await runList(b.then, 0, ep, replay || ownDone);
+}
+
+async function ensureNav(label, ep) {
+  const el = await waitUntil(() => findNav(label), 4000, ep);
+  if (!el) return false;
+  if (el.classList.contains('active')) return true;
+  setSpotOn([el], true);
+  showTap(el);
+  await sleep(reduceMotion.matches ? 40 : 240);
+  alive(ep);
+  S.navByTourAt = Date.now();
+  el.click();
+  await waitUntil(() => { const n = findNav(label); return n && n.classList.contains('active'); }, 3000, ep);
+  await sleep(150);
+  return true;
+}
+
+/* =========================================================================
+   Navigation through beats
+   ========================================================================= */
+/* aria-disabled (not `disabled`) so keyboard focus is never dropped while a step runs. */
+const setDis = (btn, on) => btn.setAttribute('aria-disabled', on ? 'true' : 'false');
+function restoreFocus() {
+  if (!endEl.hidden) return;
+  const ae = document.activeElement;
+  if (ae && ae !== document.body) return;
+  const target = S.collapsed ? (narrowMQ.matches ? stripNext : pillNext) : btnNext;
+  try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
+}
+function setBusy(on, label) {
+  S.busy = on;
+  btnNext.classList.toggle('busy', on);
+  btnNext.setAttribute('aria-busy', on ? 'true' : 'false');
+  [btnNext, pillNext, stripNext].forEach((b) => setDis(b, on));
+  setDis(btnPrev, on || S.cur <= 0);
+  if (on) setStatus(label || 'Working…', true);
+  else { setStatus(''); restoreFocus(); }
+  updateNextLabel();
+}
+function setStatus(msg, spinning) {
+  gStatus.innerHTML = msg ? `${spinning ? '<span class="spin" aria-hidden="true"></span>' : ''}<span>${msg}</span>` : '';
+}
+function updateNextLabel() {
+  if (S.busy) { btnNextLabel.textContent = 'Working'; return; }
+  btnNextLabel.textContent = S.cur === N - 1 ? 'Finish' : 'Next';
+}
+
+async function enterBeat(i, ep, { forward = false, forceNav = false, quiet = false } = {}) {
+  const b = BEATS[i];
+  const pageChanged = S.cur < 0 || BEATS[S.cur].page !== b.page;
+  if (pageChanged || forceNav) await ensureNav(PAGES[b.page].nav, ep);
+  if (forward && b.pre) await runList(b.pre, 0, ep, laterOnceDone(i));
+  render(i, { quiet });
+}
+
+async function next() {
+  if (!S.started || S.ended) return;
+  if (S.busy) return;
+  clearTimeout(S.autoTimer);
+  const ep = S.epoch;
+  const i = S.cur;
+  setBusy(true, BEATS[i].busy || (BEATS[i].actions ? 'Working in the app…' : 'Loading…'));
+  try {
+    const from = S.userFrom && S.userFrom.beat === i ? S.userFrom.from : 0;
+    S.userFrom = null;
+    await runBeatActions(i, from, ep);
+    alive(ep);
+    if (i >= N - 1) { showEnd(); return; }
+    await enterBeat(i + 1, ep, { forward: true });
+  } catch (e) {
+    if (e !== CANCEL) { console.warn('[tour]', e); try { render(Math.min(i + 1, N - 1)); } catch { /* never dead-end */ } }
+  } finally {
+    if (ep === S.epoch) setBusy(false);
+  }
+}
+
+async function prev() {
+  if (!S.started || S.busy || S.cur <= 0) return;
+  clearTimeout(S.autoTimer);
+  const ep = S.epoch;
+  setBusy(true, 'Going back…');
+  try { await enterBeat(S.cur - 1, ep); }
+  catch (e) { if (e !== CANCEL) console.warn('[tour]', e); }
+  finally { if (ep === S.epoch) setBusy(false); }
+}
+
+/* Jump via the section dots. Forward jumps replay each skipped beat's actions
+   in order (fast-forward), so the app ends up in the state the narration
+   assumes; backward jumps only move the narration (actions aren't undone). */
+async function goToStep(t) {
+  if (!S.started || S.busy || t === S.cur || t < 0 || t >= N) return;
+  clearTimeout(S.autoTimer);
+  const ep = S.epoch;
+  setBusy(true, t > S.cur ? 'Catching up…' : 'Going back…');
+  try {
+    if (t < S.cur) { await enterBeat(t, ep, { forceNav: true }); }
+    else {
+      while (S.cur < t) {
+        await runBeatActions(S.cur, 0, ep);
+        await enterBeat(S.cur + 1, ep, { forward: true, quiet: S.cur + 1 < t });
+      }
+    }
+  } catch (e) { if (e !== CANCEL) console.warn('[tour]', e); }
+  finally { if (ep === S.epoch) setBusy(false); }
+}
+
+/* =========================================================================
+   Rendering the guide
+   ========================================================================= */
+gDots.innerHTML = PAGES.map((p, i) => `<button type="button" class="g-dot" data-page="${i}" aria-label="Jump to ${p.title}" title="${p.title}"></button>`).join('');
+[...gDots.children].forEach((d) => d.addEventListener('click', () => {
+  const first = BEATS.findIndex((b) => b.page === +d.dataset.page);
+  if (first >= 0) goToStep(first);
+}));
+btnCollapse.innerHTML = icon('minus', 14);
+gBar.setAttribute('aria-valuemax', String(N));
+
+function render(i, { quiet = false } = {}) {
+  S.cur = i;
+  const b = BEATS[i], page = PAGES[b.page];
+  const gen = ++S.spotGen;
+  const swap = () => {
+    gIcon.innerHTML = icon(page.icon, 13);
+    gPage.textContent = page.title;
+    gPageCount.textContent = '';
+    gContext.textContent = page.sub;
+    gTitle.textContent = b.lead;
+    gText.textContent = b.rest;
+    if (b.cta) { gCta.hidden = false; gCta.innerHTML = `${icon('arrowRight', 13)}<span>${b.cta}</span>`; }
+    else { gCta.hidden = true; gCta.innerHTML = ''; }
+    gBody.classList.remove('swap');
+  };
+  if (quiet || reduceMotion.matches) swap();
+  else { gBody.classList.add('swap'); setTimeout(() => { if (S.cur === i) swap(); }, 120); }
+
+  gStep.textContent = `Step ${i + 1} of ${N}`;
+  gBar.setAttribute('aria-valuenow', String(i + 1));
+  gBar.setAttribute('aria-valuetext', `Step ${i + 1} of ${N}: ${b.lead}`);
+  gBarFill.style.width = `${((i + 1) / N) * 100}%`;
+  [...gDots.children].forEach((d, di) => {
+    d.classList.toggle('active', di === b.page);
+    d.classList.toggle('done', di < b.page);
+    if (di === b.page) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current');
+  });
+  stripLabel.textContent = `Step ${i + 1} of ${N}`;
+  setDis(btnPrev, S.busy || i <= 0);
+  updateNextLabel();
+  if (!quiet) showBeatSpot(b, gen);
+}
+
+/* =========================================================================
+   Spotlight: finds the beat's target (waiting for it to appear if needed),
+   scrolls it into view, then re-tracks it every frame while visible: catches
+   iframe scroll, window/iframe resize, and React re-renders replacing nodes.
+   ========================================================================= */
+async function showBeatSpot(b, gen) {
+  if (!b.target) { clearSpot(); return; }
+  const idx = BEATS.indexOf(b);
+  const replay = laterOnceDone(idx);
+  const timeout = replay ? Math.min(b.wait ?? 3000, 900) : (b.wait ?? 3000);
+  const slowTimer = setTimeout(() => {
+    if (gen !== S.spotGen) return;
+    clearSpot(); // don't leave the previous beat's ring pointing at the wrong thing
+    // Only a beat that is expected to take a while gets a status line, and it stays neutral.
+    if (!S.busy && !replay && (b.wait ?? 0) >= 6000) setStatus('Getting this view ready…', true);
+  }, 900);
+  let els = null;
+  try { els = await waitUntil(() => (gen === S.spotGen ? resolveTargets(b.target) : ['stale']), timeout); }
+  catch { els = null; }
+  clearTimeout(slowTimer);
+  if (gen !== S.spotGen || (els && els[0] === 'stale')) return;
+  if (!S.busy) setStatus('');
+  if (!els || !els.length) { clearSpot(); return; } // graceful: narration without a spotlight
+  if (!reduceMotion.matches) await settleRects(els);   // let drawers / modals finish sliding in
+  if (gen !== S.spotGen) return;
+  if (ensureVisible(els, true)) await sleep(reduceMotion.matches ? 30 : 380);
+  if (gen !== S.spotGen) return;
+  if (ensureVisible(els, false)) await sleep(60);       // re-measure once: layout may have shifted
+  if (gen !== S.spotGen) return;
+  setSpotOn(els, true, b.target);
+}
+
+/* spec (optional) lets the tracker re-resolve the target if React replaces
+   the node; a bare element list (e.g. a control the tour is about to click)
+   is tracked as-is. */
+function setSpotOn(els, pulse, spec = null) {
+  const wasOn = !!S.track && spot.classList.contains('on') && spot.style.opacity !== '0';
+  if (pulse && wasOn) {
+    spot.classList.add('glide');
+    clearTimeout(S.glideT);
+    S.glideT = setTimeout(() => spot.classList.remove('glide'), 320);
+  }
+  S.track = { spec, els, lastResolve: performance.now() };
+  positionSpot();
+  spot.classList.add('on');
+  if (pulse && !reduceMotion.matches) { spot.classList.remove('pulse'); void spot.offsetWidth; spot.classList.add('pulse'); }
+  kick();
+}
+function clearSpot() {
+  S.track = null;
+  spot.classList.remove('on', 'pulse');
+  hideConnector();
+}
+
+function unionRect(els) {
+  let l = Infinity, t = Infinity, r = -Infinity, btm = -Infinity;
+  for (const e of els) {
+    if (!e.isConnected) continue;
+    const rc = visibleRect(e);
+    if (!rc) continue;
+    l = Math.min(l, rc.left); t = Math.min(t, rc.top); r = Math.max(r, rc.right); btm = Math.max(btm, rc.bottom);
+  }
+  return l === Infinity ? null : { left: l, top: t, width: r - l, height: btm - t };
+}
+
+function positionSpot() {
+  const tr = S.track;
+  if (!tr) return false;
+  const now = performance.now();
+  // Re-resolve periodically, or right away if React swapped the node out.
+  if (tr.spec && (now - tr.lastResolve > 450 || tr.els.some((e) => !e.isConnected))) {
+    const fresh = resolveTargets(tr.spec);
+    if (fresh.length) tr.els = fresh;
+    tr.lastResolve = now;
+  }
+  const r = unionRect(tr.els);
+  const lw = spotLayer.clientWidth, lh = spotLayer.clientHeight;
+  if (!r || r.top + r.height < 0 || r.left + r.width < 0 || r.top > lh || r.left > lw) {
+    spot.style.opacity = '0';
+    tr.visible = false;
+    return false;
+  }
+  const pad = 5;
+  const x = Math.max(2, r.left - pad), y = Math.max(2, r.top - pad);
+  const w = Math.min(lw - 2, r.left + r.width + pad) - x, h = Math.min(lh - 2, r.top + r.height + pad) - y;
+  spot.style.transform = '';
+  spot.style.left = `${x}px`; spot.style.top = `${y}px`;
+  spot.style.width = `${Math.max(0, w)}px`; spot.style.height = `${Math.max(0, h)}px`;
+  spot.style.opacity = '';
+  tr.visible = true;
+  return true;
+}
+
+/* The tracking loop idles once the ring has been still for ~30 frames, and is woken by
+   scroll / resize / ResizeObserver / transitionend / DOM mutations in the app. */
+let loopId = 0, pending = false, stableN = 0, lastSig = '';
+function schedule() {
+  pending = true;
+  const id = ++loopId;
+  // A hidden document gets no animation frames, so fall back to a slow timer: the ring still follows re-renders.
+  if (document.hidden) setTimeout(() => tick(id), 120); else requestAnimationFrame(() => tick(id));
+}
+function kick() { stableN = 0; if (!pending) schedule(); }
+function tick(id) {
+  if (id !== loopId) return;
+  pending = false;
+  if (!S.track || !tour.classList.contains('on')) { hideConnector(); return; }
+  const ok = positionSpot();
+  if (ok) drawConnector(); else hideConnector();
+  const sig = ok ? `${spot.style.left}|${spot.style.top}|${spot.style.width}|${spot.style.height}` : 'x';
+  if (sig === lastSig) stableN++; else { stableN = 0; lastSig = sig; }
+  if (stableN >= 30) return;
+  schedule();
+}
+
+function hideConnector() { cLine.style.opacity = 0; cDot.style.opacity = 0; }
+function drawConnector() {
+  const guide = $('guide');
+  if (S.collapsed && !narrowMQ.matches) { hideConnector(); return; }
+  if (!guide.offsetWidth || S.ended) { hideConnector(); return; }
+  const sr = spot.getBoundingClientRect(), gr = guide.getBoundingClientRect();
+  if (sr.width < 2) { hideConnector(); return; }
+  const gc = { x: gr.left + gr.width / 2, y: gr.top + gr.height / 2 };
+  const sc = { x: sr.left + sr.width / 2, y: sr.top + sr.height / 2 };
+  const clamp = (rc, px, py) => ({ x: Math.max(rc.left, Math.min(px, rc.right)), y: Math.max(rc.top, Math.min(py, rc.bottom)) });
+  const p1 = narrowMQ.matches ? { x: Math.max(gr.left + 24, Math.min(sc.x, gr.right - 24)), y: gr.top } : { x: gr.left, y: Math.max(gr.top + 24, Math.min(sc.y, gr.bottom - 24)) };
+  const p2 = clamp(sr, gc.x, gc.y);
+  cLine.setAttribute('x1', p1.x); cLine.setAttribute('y1', p1.y);
+  cLine.setAttribute('x2', p2.x); cLine.setAttribute('y2', p2.y);
+  cDot.setAttribute('cx', p2.x); cDot.setAttribute('cy', p2.y);
+  cLine.style.opacity = 0.55; cDot.style.opacity = 1;
+}
+
+/* =========================================================================
+   Iframe wiring: readiness, listeners for viewer clicks / scroll / keys,
+   and click-to-advance when the viewer navigates via the sidebar themselves.
+   ========================================================================= */
+function isReady() {
+  const w = fwin(), d = fdoc();
+  if (!w || !d || d.location.href === 'about:blank') return false;
+  try { if (w.__foragerDemo && w.__foragerDemo.ready) return true; } catch { /* cross-origin */ }
+  // Fallback for builds without the hook: the app shell has rendered.
+  return !!(d.querySelector('.sidebar .sidebar-tab') && performance.now() - (S.loadAt || 0) > 4000);
+}
+function waitReady(timeout = 25000, staleHook = null) {
+  // staleHook: the pre-reset __foragerDemo object; a fresh page must expose a NEW one.
+  return waitUntil(() => isReady() && (!staleHook || (() => { try { return fwin().__foragerDemo !== staleHook; } catch { return true; } })()), timeout);
+}
+
+let navObserver = null, docObserver = null;
+function onFrameLoad() {
+  S.loadAt = performance.now();
+  S.frameLoadedOnce = true;
+  const d = fdoc(), w = fwin();
+  if (!d || !w) return;
+  d.addEventListener('scroll', kick, true);       // capture: catches every inner scroller
+  d.addEventListener('transitionend', kick, true);
+  d.addEventListener('animationend', kick, true);
+  w.addEventListener('resize', kick);
+  if (docObserver) docObserver.disconnect();
+  docObserver = new MutationObserver(kick);
+  if (d.body) docObserver.observe(d.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+  d.addEventListener('click', onFrameClick, true);
+  w.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+    // Only steer the tour when nothing interactive in the app has focus, so arrow keys
+    // still belong to inputs, dropdowns, tabs, and sliders.
+    const ae = d.activeElement || e.target;
+    const interactive = ae && ae !== d.body && ae.closest && ae.closest('input, textarea, select, [contenteditable], [role="listbox"], [role="menu"], [role="menuitem"], [role="option"], [role="tab"], [role="slider"], [role="radio"], [role="combobox"], [role="grid"], .ui-dropdown-menu');
+    if (interactive || (e.target && e.target.isContentEditable)) return;
+    if (e.key === 'ArrowRight' && S.started && !S.ended) { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' && S.started && !S.ended) { e.preventDefault(); prev(); }
+  });
+  if (navObserver) navObserver.disconnect();
+  navObserver = new MutationObserver(onNavMutation);
+  waitUntil(() => d.querySelector('.sidebar-nav, .tabs'), 20000).then((nav) => {
+    if (nav && fdoc() === d) navObserver.observe(nav, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  }).catch(() => {});
+}
+frame.addEventListener('load', onFrameLoad);
+
+/* armNext, ported: if the viewer clicks the next section's sidebar item
+   themselves while on the last beat of a section, follow them. */
+function onNavMutation() {
+  if (!S.started || S.busy || S.ended || S.cur < 0) return;
+  if (Date.now() - S.navByTourAt < 1500) return;
+  const b = BEATS[S.cur], nb = BEATS[S.cur + 1];
+  if (!nb || nb.page === b.page) return;
+  const n = findNav(PAGES[nb.page].nav);
+  if (n && n.classList.contains('active')) {
+    clearTimeout(S.autoTimer);
+    const ep = S.epoch;
+    setBusy(true, 'Following you…');
+    enterBeat(S.cur + 1, ep, { forward: true }).catch(() => {}).finally(() => { if (ep === S.epoch) setBusy(false); });
+  }
+}
+
+/* If the viewer clicks the very control the current beat would click on
+   Next, treat that step as done and advance, without double-acting. */
+function onFrameClick(e) {
+  if (!S.started || S.busy || S.ended || S.cur < 0 || !e.isTrusted) return;
+  const b = BEATS[S.cur];
+  if (!b.actions || (b.once && S.done.has(b.once))) return;
+  for (let k = 0; k < b.actions.length; k++) {
+    const a = b.actions[k];
+    if (a.skipIf && resolve(a.skipIf)) continue;
+    if (a.skipUnless && !resolve(a.skipUnless)) continue;
+    if (a.do !== 'click') {
+      if (a.do === 'type' || a.do === 'pick') return; // needs input the viewer hasn't given
+      continue;
+    }
+    const el = resolve(a.target);
+    if (el && el.contains(e.target)) {
+      S.userFrom = { beat: S.cur, from: k + 1 };
+      clearTimeout(S.autoTimer);
+      S.autoTimer = setTimeout(() => next(), 550);
+    }
+    return; // only the first pending click counts
+  }
+}
+
+/* On narrow screens the app's 216px sidebar would eat the iframe, so the tour
+   collapses it (via the app's own toggle) and restores it on wide screens. */
+async function fitSidebar() {
+  const d = fdoc();
+  if (!d) return;
+  const side = d.querySelector('.sidebar');
+  const btn = d.querySelector('.sidebar-collapse-btn');
+  if (!side || !btn) return;
+  const collapsed = side.classList.contains('collapsed');
+  if (narrowMQ.matches && !collapsed) { btn.click(); S.weCollapsedSidebar = true; }
+  else if (!narrowMQ.matches && collapsed && S.weCollapsedSidebar) { btn.click(); S.weCollapsedSidebar = false; }
+}
+narrowMQ.addEventListener('change', () => { fitSidebar(); kick(); });
+
+/* =========================================================================
+   Start / restart / end
+   ========================================================================= */
+function loadFrame() {
+  if (location.protocol === 'file:') return;
+  if (frame.getAttribute('src') === APP_URL) return;
+  frame.setAttribute('src', APP_URL);
+}
+
+function showLanding() {
+  landing.classList.remove('gone');
+  landing.setAttribute('aria-hidden', 'false');
+  tour.classList.remove('on');
+  tour.setAttribute('aria-hidden', 'true');
+  hideConnector();
+  $('start-label').textContent = S.started && !S.ended ? 'Resume the walkthrough' : 'Start the walkthrough';
+  $('start-btn').focus({ preventScroll: true });
+}
+function showTour() {
+  landing.classList.add('gone');
+  landing.setAttribute('aria-hidden', 'true');
+  tour.classList.add('on');
+  tour.setAttribute('aria-hidden', 'false');
+  kick();
+}
+
+async function start() {
+  if (location.protocol === 'file:') {
+    showError('This page has to be served over http(s) to load the app. From the project folder run <code>npx serve demo-site</code> or <code>python3 -m http.server</code> inside <code>demo-site/</code>, then open the printed address.');
+    return;
+  }
+  loadFrame();
+  const sb = $('start-btn');
+  if (S.started && !S.ended) { showTour(); btnNext.focus({ preventScroll: true }); return; }
+  if (S.ended) { showTour(); restart(); return; }
+  sb.classList.add('loading'); sb.disabled = true;
+  showTour();
+  loadingMsg.textContent = 'Loading the app…';
+  loadingEl.hidden = isReady();
+  const ok = await waitReady();
+  sb.classList.remove('loading'); sb.disabled = false;
+  if (!ok) {
+    loadingEl.hidden = true;
+    showLanding();
+    showError("The app didn't finish loading. Check that <code>demo-site/app/</code> exists (built with <code>npm run build:demo</code>) and that you're serving the folder over http, then reload.");
+    return;
+  }
+  loadingEl.hidden = true;
+  S.started = true; S.ended = false;
+  history.replaceState(null, '', '#tour');
+  await fitSidebar();
+  const ep = S.epoch;
+  setBusy(true, 'Loading…');
+  try { await enterBeat(0, ep, { forceNav: true }); } catch (e) { if (e !== CANCEL) render(0); }
+  finally { if (ep === S.epoch) setBusy(false); }
+  btnNext.focus({ preventScroll: true });
+}
+
+function showError(html) { const el = $('l-error'); el.innerHTML = html; el.hidden = false; }
+
+async function restart() {
+  S.epoch++;
+  S.spotGen++;
+  clearTimeout(S.autoTimer);
+  hideEnd();
+  let staleHook = null;
+  try { staleHook = fwin().__foragerDemo || null; } catch { /* ignore */ }
+  clearSpot();
+  S.done.clear(); S.vars = {}; S.userFrom = null; S.cur = -1;
+  const ep = S.epoch;
+  setBusy(true, 'Resetting the demo…');
+  loadingMsg.textContent = 'Resetting the demo…';
+  loadingEl.hidden = false;
+  showTour();
+  const loaded = new Promise((res) => {
+    const h = () => { frame.removeEventListener('load', h); res(true); };
+    frame.addEventListener('load', h);
+    setTimeout(() => { frame.removeEventListener('load', h); res(false); }, 3000);
+  });
+  try {
+    const w = fwin();
+    if (w && w.__foragerDemo && typeof w.__foragerDemo.resetDemo === 'function') w.__foragerDemo.resetDemo();
+    else if (w) w.location.reload();
+    else frame.setAttribute('src', APP_URL);
+  } catch { frame.setAttribute('src', APP_URL); }
+  await loaded;
+  if (ep !== S.epoch) return;
+  if (!(await waitReady(8000, staleHook))) await waitReady(10000);
+  if (ep !== S.epoch) return;
+  loadingEl.hidden = true;
+  S.started = true; S.ended = false;
+  await fitSidebar();
+  try { await enterBeat(0, ep, { forceNav: true }); } catch (e) { if (e !== CANCEL) render(0); }
+  finally { if (ep === S.epoch) setBusy(false); }
+  btnNext.focus({ preventScroll: true });
+}
+
+const RECAP = [
+  ['var(--brand)', 'shield', 'Nothing is filed on trust.', 'Documents wait in a review folder until a person approves them, and overriding a failed check takes a written reason.'],
+  ['var(--accent)', 'bell', 'Problems surface on their own.', 'Expiring documents, missing checklists, name drift, and disagreeing values show up in Notices, with follow-up requests drafted for you (simulated here).'],
+  ['var(--amber)', 'scan', 'Every stage is visible.', 'Live Run streams each step as it happens, and each AI call has a small cost shown by stage and by person.'],
+];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const contactOk = !!(CONTACT.href && CONTACT.label && /^(https?:|mailto:)/i.test(CONTACT.href.trim()));
+const contactBtn = contactOk
+  ? `<a class="btn primary" id="end-contact" href="${esc(CONTACT.href.trim())}"${/^https?:/i.test(CONTACT.href.trim()) ? ' target="_blank" rel="noopener"' : ''}>${esc(CONTACT.label)}</a>`
+  : '';
+endEl.innerHTML = `
+  <div class="card end-card">
+    <span class="pill">${icon('sparkles', 12)}Walkthrough complete</span>
+    <h2 id="end-title">The LLM reads. The code judges. The human decides.</h2>
+    <ul class="recap">${RECAP.map(([c, ic, b, tx]) => `<li><span class="chip" style="background:${c}">${icon(ic, 14, '#fff', 2)}</span><span><b>${b}</b> ${tx}</span></li>`).join('')}</ul>
+    <p class="end-note">Built as a working prototype. Everything you saw ran on fictional suppliers and sample documents. No real customer data or results are shown.</p>
+    <div class="end-actions">
+      ${contactBtn}
+      <button type="button" class="btn" id="end-explore">Explore on your own</button>
+      <button type="button" class="btn ghost" id="end-restart">${icon('restart', 15)}Restart the walkthrough</button>
+      <button type="button" class="btn ghost" id="end-overview">Back to overview</button>
+    </div>
+    <details class="built">
+      <summary><span class="chev">${icon('chevRight', 14)}</span>How it's built</summary>
+      <ul>
+        <li><b>Backend:</b> Node.js and Express, with SQLite through Node's built-in <code>node:sqlite</code>. Documents, the review queue, checklists, and an append-only audit log live there.</li>
+        <li><b>Frontend:</b> React, built with Vite. This walkthrough drives that same UI.</li>
+        <li><b>LLM layer:</b> provider-agnostic. Gemini, Claude, or Groq is one setting; each provider implements a single JSON-generation call.</li>
+        <li><b>Integrations:</b> Gmail and Dropbox over OAuth refresh tokens. Documents are held in a Dropbox review folder until a reviewer approves them.</li>
+        <li><b>Safe filing:</b> Approve only succeeds once the file move into the real folder is confirmed, so a failure leaves the document staged, not misfiled.</li>
+        <li><b>Live Run:</b> pipeline progress, including token usage, streams to the browser over Server-Sent Events.</li>
+        <li><b>This demo:</b> the real React app, with every API call answered in your browser from fictional fixtures. No email is read or sent, nothing is stored, and no AI model is called.</li>
+      </ul>
+    </details>
+  </div>`;
+$('end-restart').addEventListener('click', () => restart());
+$('end-explore').addEventListener('click', () => { hideEnd(); clearSpot(); setCollapsed(true); });
+$('end-overview').addEventListener('click', () => { hideEnd(); showLanding(); });
+
+/* The end card is a modal: everything behind it is inert, and Tab stays inside it. */
+let endReturnFocus = null;
+function setBackgroundInert(on) {
+  [$('guide'), stageEl, document.querySelector('.t-bar')].forEach((el) => { if (el) el.inert = on; });
+}
+function showEnd() {
+  S.ended = true;
+  clearSpot();
+  endReturnFocus = document.activeElement;
+  endEl.hidden = false;
+  setBackgroundInert(true);
+  history.replaceState(null, '', '#done');
+  setTimeout(() => ($('end-contact') || $('end-explore')).focus({ preventScroll: true }), 30);
+}
+function hideEnd() {
+  if (endEl.hidden) return;
+  endEl.hidden = true;
+  setBackgroundInert(false);
+  const r = endReturnFocus; endReturnFocus = null;
+  if (r && r.isConnected && r.focus) { try { r.focus({ preventScroll: true }); } catch { /* ignore */ } }
+}
+
+function setCollapsed(on) {
+  S.collapsed = on;
+  tour.classList.toggle('guide-collapsed', on);
+  pill.hidden = !on || narrowMQ.matches;
+  btnCollapse.setAttribute('aria-expanded', on ? 'false' : 'true');
+  btnCollapse.setAttribute('aria-label', on ? 'Show guide' : 'Hide guide');
+  btnCollapse.innerHTML = icon(on ? 'chevRight' : 'minus', 14);
+  if (on) (narrowMQ.matches ? stripOpen : pillExpand).focus({ preventScroll: true });
+  recenter();
+  kick();
+}
+
+/* =========================================================================
+   Controls and keyboard
+   ========================================================================= */
+btnNext.addEventListener('click', () => (S.ended ? showEnd() : next()));
+pillNext.addEventListener('click', () => (S.ended ? showEnd() : next()));
+stripNext.addEventListener('click', () => (S.ended ? showEnd() : next()));
+stripOpen.addEventListener('click', () => { setCollapsed(false); btnNext.focus({ preventScroll: true }); });
+btnPrev.addEventListener('click', prev);
+btnCollapse.addEventListener('click', () => setCollapsed(!S.collapsed));
+pillExpand.addEventListener('click', () => { setCollapsed(false); btnNext.focus({ preventScroll: true }); });
+$('restart-btn').addEventListener('click', () => restart());
+$('overview-btn').addEventListener('click', () => showLanding());
+$('start-btn').addEventListener('click', start);
+$('start-link').addEventListener('click', (e) => { e.preventDefault(); start(); });
+
+window.addEventListener('keydown', (e) => {
+  if (!tour.classList.contains('on')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (!endEl.hidden) {
+    if (e.key === 'Escape') { e.preventDefault(); hideEnd(); }
+    else if (e.key === 'Tab') {
+      const f = [...endEl.querySelectorAll('button:not([disabled]), a[href], summary')].filter((x) => x.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (!endEl.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    return;
+  }
+  const tg = e.target;
+  const onControl = tg && tg.closest && tg.closest('button, a, input, textarea, select, summary, [role="button"]');
+  if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  else if ((e.key === ' ' || e.key === 'Enter') && !onControl) { e.preventDefault(); next(); }
+  else if (e.key === 'Escape') { e.preventDefault(); setCollapsed(!S.collapsed); }
+});
+
+window.addEventListener('resize', kick);
+let recT = 0;
+/* When the stage resizes (guide sheet expanding or collapsing on a phone), keep the target on screen. */
+function recenter() {
+  clearTimeout(recT);
+  recT = setTimeout(() => { if (S.track && !S.busy) ensureVisible(S.track.els, false); kick(); }, 180);
+}
+new ResizeObserver(() => { kick(); recenter(); }).observe(stageEl);
+document.addEventListener('visibilitychange', () => { pending = false; kick(); });
+
+/* Boot: preload the app behind the landing so Start is instant. */
+if (location.protocol === 'file:') {
+  showError('Opened from a file. This page needs to be served over http(s), because the guide reads the embedded app. Run <code>python3 -m http.server</code> inside <code>demo-site/</code> (or <code>npx serve demo-site</code>) and open the printed address.');
+  $('explore-link').removeAttribute('href');
+} else {
+  loadFrame();
+  if (location.hash === '#tour') start();
+}
+})();
+</script>
+</body>
+</html>
