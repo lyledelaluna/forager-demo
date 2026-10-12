@@ -76,6 +76,16 @@ the tour needs same-origin access.
 
 ## How the tour works
 
+- **Twelve steps, four pages.** The tour starts on Live Run and visits Live Run (2 steps), Review Queue
+  (7), Notices (2) and Document Index (1), then shows the end screen. The steps are: scan the inbox,
+  junk skipped, AI reads and code judges, clean pass approved, advisory gap, override reason, critical
+  gap rejected, no checklist so the AI drafts one, review and save the draft, overdue notice,
+  pre-written follow-up, filed and findable. Each step is a lead plus one sentence. Fictional data and
+  "no AI is called" appear on the landing footer, the top-bar tag, step 1, step 11 and the end screen.
+  The `BEATS` array in `index.html` is the whole script; `once` keys must stay in the order the steps
+  run (`run`, `approve-coa`, `approve-kosher`, `reject-allergen`, `generate-checklist`,
+  `use-checklist`, `send-request`) because replay detection looks at later keys.
+
 - **Runtime hooks.** The app exposes `window.__foragerDemo = { ready, resetDemo() }` (see
   `frontend/src/demo/CONTRACT.md`). The tour waits for `ready` before it starts. **Restart** calls
   `resetDemo()`, which reseeds the in-memory store and reloads the iframe, and then the tour returns
@@ -96,10 +106,9 @@ the tour needs same-origin access.
 - **Keyboard.** `→`, `Space`, and `Enter` go to the next step. `←` goes back. `Esc` hides or shows
   the guide (a prominent **Show guide** button remains). Arrow keys pressed inside the app only move
   the tour when no input, dropdown, or other widget has focus. While the end card is open, the rest of
-  the page is inert and Tab stays inside the card. The section dots jump between sections; jumping forward replays the skipped steps'
-  actions in order.
+  the page is inert and Tab stays inside the card.
 - **Narrow screens.** Below 820px the guide becomes a bottom sheet (collapsed, it is a single
-  "Step N of M · Show guide" strip with a Next button), and the tour collapses the app's sidebar
+  "3 / 12 · Show guide" strip with a Next button), and the tour collapses the app's sidebar
   using the app's own toggle.
 - **Spotlight.** The ring scrolls the target to the middle of the app's own scroll pane, waits for
   drawers and modals to finish sliding in, glides between targets (unless reduced motion is on), and

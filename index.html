@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Forager Interactive Walkthrough</title>
-<meta name="description" content="A guided, zero-API walkthrough of Forager, a supplier-document intake pipeline: the LLM reads, the code judges, the human decides. Fictional sample data; runs entirely in your browser." />
+<meta name="description" content="A 2-minute guided walkthrough of Forager, a supplier-document intake pipeline: the AI reads, the code judges, the human decides. Fictional sample data; no AI is called." />
 <meta name="color-scheme" content="light dark" />
 <style>
   /* ===================================================================
@@ -37,7 +37,7 @@
     --text-3: #6b6f80;
     --shadow-card: 0 22px 44px -20px rgba(30, 35, 60, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     --shadow-float: 0 18px 40px -12px rgba(30, 35, 60, 0.28);
-    --dim: rgba(18, 22, 40, 0.35);
+    --dim: rgba(18, 22, 40, 0.45);
 
     --r-sm: 7px;
     --r-md: 12px;
@@ -74,7 +74,7 @@
       --text-3: #9a9ba3;
       --shadow-card: 0 10px 26px -14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
       --shadow-float: 0 18px 40px -12px rgba(0, 0, 0, 0.6);
-      --dim: rgba(0, 0, 0, 0.5);
+      --dim: rgba(0, 0, 0, 0.55);
       color-scheme: dark;
     }
   }
@@ -126,85 +126,42 @@
   }
 
   /* ===================================================================
-     LANDING
+     LANDING: one centered column, accent colour on the CTA only
      =================================================================== */
   #landing {
-    position: fixed; inset: 0; z-index: 50; overflow-y: auto; overflow-x: hidden;
-    background:
-      radial-gradient(900px 520px at 8% -6%, rgba(68, 84, 152, 0.16), transparent 70%),
-      radial-gradient(700px 480px at 100% 10%, rgba(22, 179, 120, 0.10), transparent 70%),
-      var(--bg);
+    position: fixed; inset: 0; z-index: 50; overflow-y: auto; overflow-x: hidden; background: var(--bg);
     transition: opacity .35s var(--ease), visibility .35s;
   }
   #landing.gone { opacity: 0; visibility: hidden; pointer-events: none; }
-  .l-wrap { width: min(1080px, 100%); margin: 0 auto; padding: 22px 24px 64px; }
-  .l-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 56px; }
-  .l-top .note { font-size: 12.5px; color: var(--text-3); font-weight: 600; }
+  .l-wrap { width: min(640px, 100%); min-height: 100%; margin: 0 auto; padding: 24px 24px 28px; display: flex; flex-direction: column; }
+  .l-main { margin: auto 0; padding: 40px 0; }
   .pill {
-    display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: var(--r-pill);
-    font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--brand-text);
-    background: var(--brand-bg); border: 1px solid var(--brand-ring);
+    display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: var(--r-pill);
+    font-size: 12.5px; font-weight: 650; letter-spacing: .02em; color: var(--text-2); border: 1px solid var(--border-strong);
   }
-  .hero h1 { font-size: clamp(34px, 5.4vw, 56px); line-height: 1.04; letter-spacing: -0.025em; margin: 18px 0 16px; font-weight: 800; max-width: 820px; }
-  .hero h1 .soft { color: var(--brand-text); }
-  .hero p.lede { font-size: clamp(16px, 1.8vw, 19px); line-height: 1.55; color: var(--text-2); max-width: 640px; margin: 0 0 30px; }
-  .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .cta-row .meta { font-size: 13px; color: var(--text-3); font-weight: 600; }
-  .hero p.sub { font-size: 15px; line-height: 1.55; color: var(--text-3); max-width: 640px; margin: -14px 0 26px; }
-  .trio-lead { margin: 48px 0 0; font-size: 16px; line-height: 1.5; color: var(--text-2); max-width: 760px; }
-  .trio-lead b { color: var(--text); }
-  .trio-lead .def { display: block; margin-top: 4px; font-size: 13.5px; color: var(--text-3); font-weight: 600; }
+  .hero h1 { font-size: clamp(32px, 5vw, 44px); line-height: 1.08; letter-spacing: -0.025em; margin: 18px 0 14px; font-weight: 800; }
+  .hero p.lede { font-size: 17px; line-height: 1.55; color: var(--text-2); max-width: 52ch; margin: 0 0 28px; }
+  .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .text-link { font-size: 14px; font-weight: 600; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
+  .text-link:hover { color: var(--text); }
   #start-btn .spin { display: none; }
   #start-btn.loading .spin { display: inline-block; }
   .l-error {
     margin-top: 14px; padding: 12px 14px; border-radius: var(--r-md); background: var(--red-bg);
-    color: var(--red-text); font-size: 13.5px; font-weight: 600; line-height: 1.5; max-width: 640px;
+    color: var(--red-text); font-size: 13.5px; font-weight: 600; line-height: 1.5;
   }
   .l-error code { font-family: var(--mono); font-size: 12.5px; }
 
-  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
-  .trio .card { padding: 20px; }
-  .card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg);
-    box-shadow: var(--shadow-card); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
-  }
-  .trio .k { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
-  .chip { width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
-  .trio h3 { margin: 0 0 6px; font-size: 19px; letter-spacing: -0.01em; }
-  .trio p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.55; }
-
-  .l-section { margin-top: 72px; }
-  .l-section .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-text); margin-bottom: 8px; }
-  .l-section h2 { font-size: clamp(24px, 3vw, 32px); margin: 0 0 10px; letter-spacing: -0.02em; line-height: 1.15; }
-  .l-section > p { color: var(--text-2); font-size: 15.5px; line-height: 1.55; margin: 0 0 22px; max-width: 640px; }
-  .problems { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .problems .card { padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; }
-  .problems h4 { margin: 0 0 3px; font-size: 15px; }
-  .problems p { margin: 0; font-size: 14px; color: var(--text-2); line-height: 1.5; }
-
-  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
-  .flow .stage-card {
-    flex: 1 1 120px; min-width: 120px; padding: 14px 12px; text-align: left; position: relative;
-  }
-  .flow .n { font-size: 11px; font-weight: 800; color: var(--text-3); font-variant-numeric: tabular-nums; }
-  .flow .lbl { font-size: 14px; font-weight: 750; margin-top: 8px; line-height: 1.25; }
-  .flow .who { margin-top: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
-  .who.llm { color: var(--brand-text); }
-  .who.code { color: var(--accent-text); }
-  .who.human { color: var(--amber-text); }
-  .flow .stage-card.gate { border-color: rgba(245, 166, 35, 0.55); box-shadow: 0 0 0 3px var(--amber-bg), var(--shadow-card); }
-  .flow-note { margin-top: 14px; font-size: 13.5px; color: var(--text-2); display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
-  .l-foot { margin-top: 72px; padding-top: 22px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-3); }
-  .l-foot a { color: var(--brand-text); font-weight: 650; }
+  .trio { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--border); display: grid; gap: 18px; }
+  .trio-item { display: grid; grid-template-columns: 10px 1fr; gap: 0 14px; align-items: start; }
+  .trio-item .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; }
+  .trio h3 { margin: 0; font-size: 17px; letter-spacing: -0.01em; }
+  .trio p { margin: 2px 0 0; color: var(--text-3); font-size: 14.5px; line-height: 1.5; }
+  .l-foot { font-size: 13px; color: var(--text-3); }
 
   @media (max-width: 820px) {
-    .l-top { margin-bottom: 32px; }
-    .trio { grid-template-columns: 1fr; margin-top: 14px; }
-    .trio-lead { margin-top: 34px; }
-    .problems { grid-template-columns: 1fr; }
-    .l-section { margin-top: 52px; }
-    .l-wrap { padding: 16px 16px 48px; }
-    .l-top .note { display: none; }
+    .l-wrap { padding: 16px 16px 24px; }
+    .l-main { padding: 28px 0; }
   }
 
   /* ===================================================================
@@ -230,11 +187,10 @@
   }
   .t-bar .wordmark { font-size: 15.5px; }
   .t-bar .wordmark .mark { width: 24px; height: 24px; border-radius: 7px; }
-  .demo-tag {
-    font-size: 12px; font-weight: 650; color: var(--text-2); padding: 5px 10px; border-radius: var(--r-pill);
-    background: var(--brand-bg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-  }
+  .demo-tag { font-size: 12px; font-weight: 600; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .t-bar .spacer { flex: 1; }
+  .t-bar .icon-btn { border-color: transparent; }
+  .t-bar .icon-btn:hover { border-color: var(--border); }
 
   .stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
   #app-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--bg); }
@@ -267,10 +223,6 @@
   #tap.go { animation: tap .55s var(--ease); }
   @keyframes tap { 0% { opacity: .95; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.5); } }
 
-  #connector { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
-  #connector line { stroke: var(--brand-text); stroke-width: 1.5; stroke-dasharray: 4 5; opacity: 0; }
-  #connector circle { fill: var(--brand-text); opacity: 0; }
-
   .stage-overlay {
     position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
     background: rgba(245, 246, 251, 0.86); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -291,38 +243,28 @@
     backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
     position: relative; z-index: 6;
   }
-  .g-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 22px 8px; }
-  .g-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .g-bar { height: 2px; flex-shrink: 0; background: var(--border); overflow: hidden; }
+  .g-bar span { display: block; height: 100%; width: 0; background: var(--brand); transition: width .4s var(--ease); }
+  .g-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 24px 24px 8px; }
+  .g-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
   .g-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--brand-text); min-width: 0; }
   .g-eyebrow .ic { width: 22px; height: 22px; border-radius: 7px; background: var(--brand-bg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .g-eyebrow .pg { color: var(--text-3); font-weight: 700; letter-spacing: .02em; text-transform: none; }
-  .g-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; margin-bottom: 18px; }
-  .g-bar span { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 2px; transition: width .4s var(--ease); }
   .g-body { transition: opacity .16s ease; }
   .g-body.swap { opacity: 0; }
-  .g-context { margin: 0 0 6px; font-size: 13px; color: var(--text-3); font-weight: 600; line-height: 1.45; }
-  .g-title { margin: 0 0 8px; font-size: 23px; line-height: 1.18; letter-spacing: -0.015em; font-weight: 800; }
-  .g-text { margin: 0 0 16px; font-size: 15px; line-height: 1.55; color: var(--text-2); }
-  .g-cta { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--brand-text); }
-  .g-cta[hidden] { display: none; }
-  .g-status { min-height: 20px; margin: 12px 0 0; font-size: 13px; color: var(--text-3); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .g-title { margin: 0 0 8px; font-size: 20px; line-height: 1.25; letter-spacing: -0.01em; font-weight: 600; }
+  .g-text { margin: 0; max-width: 34ch; font-size: 15px; line-height: 1.5; color: var(--text-2); }
+  .g-status { margin: 14px 0 0; font-size: 13px; color: var(--text-3); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .g-status:empty { margin: 0; }
   .g-status .spin { width: 13px; height: 13px; border-width: 2px; }
-  .g-foot { border-top: 1px solid var(--border); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .g-foot { padding: 12px 24px 20px; }
   .g-nav { display: flex; align-items: center; gap: 10px; }
   .g-nav .g-step { flex: 1; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; }
-  #g-next { min-width: 112px; }
+  .btn.text { border-color: transparent; background: transparent; color: var(--text-2); padding: 0 10px; }
+  .btn.text:hover { background: var(--brand-bg); border-color: transparent; color: var(--text); }
+  #g-next { height: 44px; min-width: 120px; padding: 0 22px; font-size: 15px; }
   #g-next .spin { display: none; width: 14px; height: 14px; border-width: 2px; border-color: rgba(255,255,255,.4); border-top-color: #fff; }
   #g-next.busy .spin { display: inline-block; }
   #g-next.busy .lbl-arrow { display: none; }
-  .g-dots { display: flex; justify-content: center; gap: 0; flex-wrap: wrap; }
-  .g-dot { width: 26px; height: 26px; padding: 0; border: 0; background: transparent; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-  .g-dot::before { content: ''; width: 7px; height: 7px; border-radius: 4px; background: var(--border-strong); transition: width .2s, background .2s; }
-  .g-dot.done::before { background: var(--brand-ring); }
-  .g-dot.active::before { width: 18px; background: var(--brand-text); }
-  .g-dot:hover::before { background: var(--brand-text); }
-  .g-dot:focus-visible { outline: 2px solid var(--brand-text); outline-offset: -2px; background: var(--brand-bg); }
-  .g-keys { margin: 0; text-align: center; font-size: 12.5px; color: var(--text-3); font-weight: 600; }
-  kbd { font-family: var(--font); font-size: 12px; font-weight: 700; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-strong); background: var(--panel-solid); }
 
   #g-pill {
     position: absolute; right: 16px; bottom: 16px; z-index: 7; display: flex; align-items: center; gap: 4px; padding: 4px;
@@ -341,22 +283,14 @@
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   #end[hidden] { display: none; }
-  .end-card { width: min(720px, 100%); padding: 28px 28px 24px; background: var(--panel-solid); margin: auto 0; }
-  .end-note { margin: 0 0 18px; padding: 10px 12px; border-radius: var(--r-md); background: var(--brand-bg); color: var(--text-2); font-size: 13.5px; line-height: 1.5; }
-  .end-card h2 { margin: 10px 0 16px; font-size: clamp(24px, 3.2vw, 30px); letter-spacing: -0.02em; line-height: 1.15; }
-  .end-card > p { margin: 0 0 18px; color: var(--text-2); font-size: 15px; line-height: 1.55; }
-  .recap { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 10px; }
-  .recap li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.5; color: var(--text-2); }
-  .recap li b { color: var(--text); }
-  .recap .chip { width: 26px; height: 26px; border-radius: 8px; margin-top: 1px; }
-  .end-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
-  details.built { border-top: 1px solid var(--border); padding-top: 14px; }
-  details.built summary { cursor: pointer; font-weight: 750; font-size: 14px; color: var(--text); list-style: none; display: flex; align-items: center; gap: 8px; }
-  details.built summary::-webkit-details-marker { display: none; }
-  details.built summary .chev { transition: transform .2s; }
-  details.built[open] summary .chev { transform: rotate(90deg); }
-  details.built ul { margin: 12px 0 0; padding-left: 18px; color: var(--text-2); font-size: 14px; line-height: 1.6; }
-  details.built code { font-family: var(--mono); font-size: 12.5px; }
+  .end-card {
+    width: min(520px, 100%); margin: auto 0; padding: 32px 28px 28px; background: var(--panel-solid);
+    border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-float);
+  }
+  .end-card h2 { margin: 0 0 10px; font-size: clamp(22px, 3vw, 27px); letter-spacing: -0.02em; line-height: 1.2; }
+  .end-line { margin: 0 0 6px; color: var(--text-2); font-size: 15.5px; line-height: 1.5; }
+  .end-fine { margin: 0 0 24px; color: var(--text-3); font-size: 13px; }
+  .end-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
   /* ---------- mobile: guide becomes a bottom sheet ---------- */
   @media (max-width: 819px) {
@@ -367,32 +301,28 @@
       grid-template-areas: "bar" "stage" "guide";
     }
     #tour.guide-collapsed #guide { display: flex; }
-    .demo-tag { display: none; }
     .t-bar { padding: 0 10px 0 12px; gap: 8px; }
-    .t-bar .btn .lbl-long { display: none; }
+    .demo-tag { font-size: 11.5px; }
     #guide {
       border-left: 0; border-top: 1px solid var(--border); max-height: 42vh; max-height: 42dvh;
       border-radius: 16px 16px 0 0; box-shadow: 0 -12px 30px -14px rgba(30, 35, 60, 0.3);
-      padding-bottom: env(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom); overflow: hidden;
     }
-    .g-scroll { padding: 12px 16px 4px; }
-    .g-head { margin-bottom: 10px; }
-    .g-bar { margin-bottom: 12px; }
-    .g-title { font-size: 19px; margin-bottom: 4px; }
-    .g-text { font-size: 14px; margin-bottom: 10px; }
-    .g-context { display: none; }
-    .g-status { min-height: 0; margin-top: 8px; }
-    .g-foot { padding: 8px 12px 10px; gap: 8px; }
-    .g-keys { display: none; }
-    .g-dots { display: none; }
-    /* Collapsed sheet = one single-line strip: "Step N of M" + Next. */
-    #tour.guide-collapsed .g-scroll, #tour.guide-collapsed .g-foot { display: none; }
+    .g-scroll { padding: 14px 16px 4px; }
+    .g-head { margin-bottom: 8px; }
+    .g-title { font-size: 18px; margin-bottom: 4px; }
+    .g-text { font-size: 14px; max-width: none; }
+    .g-status { margin-top: 8px; }
+    .g-foot { padding: 8px 12px 10px; }
+    #g-next { height: 40px; min-width: 104px; }
+    /* Collapsed sheet = one single-line strip: "3 / 12" + Next. */
+    #tour.guide-collapsed .g-scroll, #tour.guide-collapsed .g-foot, #tour.guide-collapsed .g-bar { display: none; }
     #tour.guide-collapsed .g-strip { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
     .g-strip-open { flex: 1; min-width: 0; min-height: 36px; text-align: left; border: 0; background: transparent; color: var(--text); font-size: 13.5px; font-weight: 700; padding: 0 4px; cursor: pointer; border-radius: var(--r-sm); font-variant-numeric: tabular-nums; }
     .g-strip-open span { color: var(--brand-text); }
     #g-pill { display: none !important; }
     #end { padding: 16px; }
-    .end-card { padding: 20px 18px; }
+    .end-card { padding: 24px 20px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -410,69 +340,32 @@
   <div class="l-wrap">
     <div class="l-top">
       <span class="wordmark"><span class="mark" data-icon="leaf"></span>Forager</span>
-      <span class="note">Interactive demo · fictional sample data · no live services</span>
     </div>
 
-    <section class="hero">
-      <span class="pill"><span data-icon="play" data-size="12"></span>Guided walkthrough · about 4 minutes</span>
-      <h1 id="hero-title">Supplier documents, from inbox to <span class="soft">filed record</span>.</h1>
-      <p class="lede">A QA manager's inbox fills with supplier certificates. Forager reads each one, checks it against your checklist, and files it only after a person approves.</p>
-      <p class="sub">When an auditor asks who accepted a document and why, there's rarely an answer. Forager records the decision and the reason. You'll use the real app, with fictional suppliers and sample documents.</p>
-      <div class="cta-row">
-        <button type="button" class="btn primary lg" id="start-btn">
-          <span class="spin" aria-hidden="true"></span>
-          <span id="start-label">Start the walkthrough</span>
-          <span data-icon="arrowRight" data-size="18"></span>
-        </button>
-        <a class="btn ghost lg" href="app/" id="explore-link">Explore the app on your own</a>
-        <span class="meta">No signup, nothing to install</span>
-      </div>
-      <div class="l-error" id="l-error" hidden></div>
-    </section>
+    <div class="l-main">
+      <section class="hero">
+        <span class="pill"><span data-icon="play" data-size="12"></span>2-minute walkthrough</span>
+        <h1 id="hero-title">Supplier documents, from inbox to filed record.</h1>
+        <p class="lede">Forager reads supplier certificates, checks them, and files them only after a person approves.</p>
+        <div class="cta-row">
+          <button type="button" class="btn primary lg" id="start-btn">
+            <span class="spin" aria-hidden="true"></span>
+            <span id="start-label">Start the walkthrough</span>
+            <span data-icon="arrowRight" data-size="18"></span>
+          </button>
+          <a class="text-link" href="app/" id="explore-link">Explore on your own</a>
+        </div>
+        <div class="l-error" id="l-error" hidden></div>
+      </section>
 
-    <p class="trio-lead"><b>Three separate authorities, on purpose.</b> No single one is trusted to wave through a real compliance gap.<span class="def">LLM — the AI model that reads documents.</span></p>
-    <div class="trio">
-      <div class="card">
-        <div class="k"><span class="chip" style="background:var(--brand)" data-icon="scan" data-size="16" data-color="#fff"></span>01</div>
-        <h3>The LLM reads.</h3>
-        <p>It filters out junk mail, classifies each attachment, extracts the fields, and reports what it found against your checklist.</p>
-      </div>
-      <div class="card">
-        <div class="k"><span class="chip" style="background:var(--accent)" data-icon="checklist" data-size="16" data-color="#fff"></span>02</div>
-        <h3>The code judges.</h3>
-        <p>A fixed rule turns those findings into Pass, Advisory, or Issues, using severities you set. The model never grades itself.</p>
-      </div>
-      <div class="card">
-        <div class="k"><span class="chip" style="background:var(--amber)" data-icon="users" data-size="16" data-color="#fff"></span>03</div>
-        <h3>The human decides.</h3>
-        <p>Nothing is filed until a person approves it. Overriding a failed check takes a written reason, and it's logged.</p>
+      <div class="trio">
+        <div class="trio-item"><span class="dot" style="background:var(--brand)"></span><div><h3>The AI reads.</h3><p>Extracts fields from attachments</p></div></div>
+        <div class="trio-item"><span class="dot" style="background:var(--accent)"></span><div><h3>The code judges.</h3><p>Fixed rules set the verdict</p></div></div>
+        <div class="trio-item"><span class="dot" style="background:var(--amber)"></span><div><h3>The human decides.</h3><p>Nothing files without approval</p></div></div>
       </div>
     </div>
 
-    <section class="l-section" aria-labelledby="problem-title">
-      <div class="eyebrow">The problem</div>
-      <h2 id="problem-title">Supplier paperwork is chased by hand.</h2>
-      <p>Certificates, statements, and specs arrive by email in whatever format each supplier prefers. Someone has to open every one, identify it, and decide whether it's complete.</p>
-      <div class="problems">
-        <div class="card"><span class="chip" style="background:var(--red)" data-icon="flag" data-size="15" data-color="#fff"></span><div><h4>Errors slip through</h4><p>Not from carelessness. From volume, and no time to check every field.</p></div></div>
-        <div class="card"><span class="chip" style="background:var(--amber)" data-icon="route" data-size="15" data-color="#fff"></span><div><h4>Records fragment</h4><p>Company and ingredient names drift in spelling from one email to the next.</p></div></div>
-        <div class="card"><span class="chip" style="background:var(--amber)" data-icon="clock" data-size="15" data-color="#fff"></span><div><h4>Review is slow</h4><p>One document at a time, and expiry dates live in someone's memory.</p></div></div>
-        <div class="card"><span class="chip" style="background:var(--red)" data-icon="search" data-size="15" data-color="#fff"></span><div><h4>No record of the call</h4><p>Who approved what, and on what grounds, usually lives in someone's inbox.</p></div></div>
-      </div>
-    </section>
-
-    <section class="l-section" aria-labelledby="flow-title">
-      <div class="eyebrow">The pipeline</div>
-      <h2 id="flow-title">Seven stages, one human gate.</h2>
-      <p>Every document takes the same path before it's treated as an accepted record.</p>
-      <ol class="flow" id="flow" style="list-style:none;margin:0;padding:0"></ol>
-      <div class="flow-note"><span data-icon="shield" data-size="16" data-color="var(--amber)"></span><span>Until a reviewer approves it, a document is held in a review folder: visible, but not yet filed.</span></div>
-    </section>
-
-    <div class="l-foot">
-      <span>Fictional suppliers and documents. Runs entirely in your browser: no email, storage, or AI calls.</span>
-      <a href="#" id="start-link">Start the walkthrough →</a>
-    </div>
+    <div class="l-foot">Fictional sample data. No AI is called.</div>
   </div>
 </main>
 
@@ -482,10 +375,10 @@
 <div id="tour" aria-hidden="true">
   <header class="t-bar">
     <span class="wordmark"><span class="mark" data-icon="leaf" data-size="15"></span>Forager</span>
-    <span class="demo-tag">Interactive demo · fictional sample data · no live services</span>
+    <span class="demo-tag">Fictional data · no AI called</span>
     <span class="spacer"></span>
-    <button type="button" class="btn small ghost" id="restart-btn"><span data-icon="restart" data-size="14"></span><span>Restart<span class="lbl-long"> demo</span></span></button>
-    <button type="button" class="btn small ghost" id="overview-btn"><span data-icon="home" data-size="14"></span><span class="lbl-long">Overview</span></button>
+    <button type="button" class="icon-btn" id="restart-btn" aria-label="Restart walkthrough" title="Restart walkthrough" data-icon="restart" data-size="15"></button>
+    <button type="button" class="icon-btn" id="overview-btn" aria-label="Back to overview" title="Back to overview" data-icon="home" data-size="15"></button>
   </header>
 
   <div class="stage" id="stage">
@@ -501,41 +394,35 @@
   </div>
 
   <aside id="guide" aria-label="Walkthrough guide">
+    <div class="g-bar" role="progressbar" aria-label="Walkthrough progress" aria-valuemin="1" id="g-bar"><span id="g-bar-fill"></span></div>
     <div class="g-scroll">
       <div class="g-head">
-        <div class="g-eyebrow"><span class="ic" id="g-icon"></span><span id="g-page">Dashboard</span><span class="pg" id="g-pagecount"></span></div>
+        <div class="g-eyebrow"><span class="ic" id="g-icon"></span><span id="g-page">Live Run</span></div>
         <button type="button" class="icon-btn" id="g-collapse" aria-label="Hide guide" aria-expanded="true" title="Hide guide (Esc)"></button>
       </div>
-      <div class="g-bar" role="progressbar" aria-label="Walkthrough progress" aria-valuemin="1" id="g-bar"><span id="g-bar-fill"></span></div>
       <div class="g-body" id="g-body">
-        <p class="g-context" id="g-context"></p>
         <div id="g-narr" aria-live="polite" aria-atomic="true">
           <h2 class="g-title" id="g-title"></h2>
           <p class="g-text" id="g-text"></p>
         </div>
-        <div class="g-cta" id="g-cta" hidden></div>
       </div>
       <p class="g-status" id="g-status" role="status"></p>
     </div>
     <div class="g-foot">
       <div class="g-nav">
-        <button type="button" class="btn ghost" id="g-prev"><span aria-hidden="true">←</span> Back</button>
-        <span class="g-step" id="g-step" aria-hidden="true">Step 1</span>
-        <button type="button" class="btn primary" id="g-next"><span class="spin" aria-hidden="true"></span><span id="g-next-label">Next</span><span class="lbl-arrow" aria-hidden="true">→</span></button>
+        <button type="button" class="btn text" id="g-prev">Back</button>
+        <span class="g-step" id="g-step" aria-hidden="true">1 / 12</span>
+        <button type="button" class="btn primary" id="g-next"><span class="spin" aria-hidden="true"></span><span id="g-next-label">Run</span><span class="lbl-arrow" aria-hidden="true">→</span></button>
       </div>
-      <nav class="g-dots" id="g-dots" aria-label="Walkthrough sections"></nav>
-      <p class="g-keys"><kbd>←</kbd> <kbd>→</kbd> to move · <kbd>Esc</kbd> to hide · or click in the app yourself</p>
     </div>
     <div class="g-strip" id="g-strip">
-      <button type="button" class="g-strip-open" id="g-strip-open" aria-label="Show guide"><span id="g-strip-label">Step 1 of 1</span> · Show guide</button>
+      <button type="button" class="g-strip-open" id="g-strip-open" aria-label="Show guide"><span id="g-strip-label">1 / 12</span> · Show guide</button>
       <button type="button" class="btn primary small" id="g-strip-next">Next <span aria-hidden="true">→</span></button>
     </div>
   </aside>
 
   <div id="end" hidden role="dialog" aria-modal="true" aria-labelledby="end-title"></div>
 </div>
-
-<svg id="connector" aria-hidden="true"><line id="c-line" x1="0" y1="0" x2="0" y2="0"/><circle id="c-dot" r="3.5" cx="0" cy="0"/></svg>
 
 <script>
 (() => {
@@ -550,31 +437,17 @@ const CONTACT = { label: '', href: '' };
    Icons (lucide-style strokes, inline, no dependencies)
    ========================================================================= */
 const ICONS = {
-  mail: '<path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/>',
   scan: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/>',
-  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
-  checklist: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 16"/>',
-  users: '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 19c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15.7 13.7c2.6.3 4.8 2 4.8 4.8"/>',
-  shield: '<path d="M12 3 4.5 6v6c0 5 3.4 7.7 7.5 9 4.1-1.3 7.5-4 7.5-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
-  search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/>',
-  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
-  flag: '<path d="M5 21V4"/><path d="M5 4h13l-3.5 4.5L18 13H5"/>',
-  route: '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.3 16.5 15.7 7.5"/>',
   arrowRight: '<path d="M4 12h16"/><path d="m13 5 7 7-7 7"/>',
   chevRight: '<path d="m9 6 6 6-6 6"/>',
   minus: '<path d="M5 12h14"/>',
-  layers: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
-  dollar: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-  send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   play: '<polygon points="7 4 20 12 7 20" fill="currentColor" stroke="none"/>',
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
-  factory: '<path d="M2 20V9l6 4V9l6 4V4h6v16z"/><path d="M6 17h2M11 17h2M16 17h2"/>',
   files: '<path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 3v5h5"/>',
   inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
   home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   restart: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
   leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.2-6.1C9.5 14.5 12 13 13 12"/>',
-  sparkles: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
 };
 function icon(name, size = 18, color = 'currentColor', sw = 1.9) {
   return `<svg class="i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -582,20 +455,6 @@ function icon(name, size = 18, color = 'currentColor', sw = 1.9) {
 document.querySelectorAll('[data-icon]').forEach((el) => {
   el.innerHTML = icon(el.dataset.icon, +(el.dataset.size || 16), el.dataset.color || 'currentColor', 2);
 });
-
-/* Landing: seven stages, one human gate. */
-const FLOW = [
-  ['Supplier inbox', 'Unread mail with attachments', ''],
-  ['Relevance filter', 'LLM reads', 'llm'],
-  ['Classify & extract', 'LLM reads', 'llm'],
-  ['Held for review, not filed', 'Code', 'code'],
-  ['Checklist validation', 'LLM reads · code judges', 'code'],
-  ['Human review', 'The human decides', 'human'],
-  ['Filed & logged', 'Audit trail', 'code'],
-];
-document.getElementById('flow').innerHTML = FLOW.map(([lbl, who, cls], i) =>
-  `<li class="card stage-card${cls === 'human' ? ' gate' : ''}"><div class="n">${String(i + 1).padStart(2, '0')}</div><div class="lbl">${lbl}</div><div class="who ${cls}">${who}</div></li>`
-).join('');
 
 /* =========================================================================
    Tour script. Every selector / button text below was checked against
@@ -608,15 +467,10 @@ document.getElementById('flow').innerHTML = FLOW.map(([lbl, who, cls], i) =>
    already did them). `once` marks a mutating beat so replays never double-act.
    ========================================================================= */
 const PAGES = [
-  { key: 'dashboard', nav: 'Dashboard', title: 'Dashboard', icon: 'layers', sub: 'Where a QA lead starts the day.' },
-  { key: 'live', nav: 'Live Run', title: 'Live Run', icon: 'scan', sub: 'A watched run, not a silent background job.' },
-  { key: 'queue', nav: 'Review Queue', title: 'Review Queue', icon: 'inbox', sub: 'The human gate. Nothing files itself.' },
-  { key: 'types', nav: 'Document Types', title: 'Document Types', icon: 'checklist', sub: 'Where validation rules come from. The LLM drafts, you own.' },
-  { key: 'companies', nav: 'Companies', title: 'Companies', icon: 'factory', sub: 'Same supplier, spelled two ways. Never merged quietly.' },
-  { key: 'usage', nav: 'Token Usage', title: 'Token Usage', icon: 'dollar', sub: 'Each AI call has a small cost, shown live.' },
-  { key: 'notices', nav: 'Notices', title: 'Notices', icon: 'bell', sub: 'Everything that needs a second look.' },
-  { key: 'email', nav: 'Email History', title: 'Email History', icon: 'send', sub: 'The fix often starts with an email.' },
-  { key: 'index', nav: 'Document Index', title: 'Document Index', icon: 'files', sub: 'The accepted record.' },
+  { key: 'live', nav: 'Live Run', title: 'Live Run', icon: 'scan' },
+  { key: 'queue', nav: 'Review Queue', title: 'Review Queue', icon: 'inbox' },
+  { key: 'notices', nav: 'Notices', title: 'Notices', icon: 'bell' },
+  { key: 'index', nav: 'Document Index', title: 'Document Index', icon: 'files' },
 ];
 const P = Object.fromEntries(PAGES.map((p, i) => [p.key, i]));
 
@@ -631,178 +485,122 @@ const selectChip = (contains, cardTitle) => ({
 const OVERRIDE_REASON = 'Supplier confirmed by phone that the new certificate numbering format is valid.';
 const failRow = (sev) => ({ sel: '.checklist-result-row', has: `.checklist-result-icon.${sev}` });
 
-const BEATS = [
-  /* ---------------- Dashboard ---------------- */
-  { page: P.dashboard, lead: 'Problems surface on their own',
-    rest: 'Counts of what has cleared review, what is pending, and what was rejected sit beside notices for missing checklists, near-duplicate names, and expiring documents. Scores and counts here are sample values, not measured accuracy.',
-    target: { union: [{ sel: '.card-validated' }, { sel: '.card-notices' }] }, cta: 'Next opens Live Run' },
+/* The queue opens on Highland, so beat 3 selects Riverside before its spotlight lands (`pre`) and
+   repeats the same idempotent steps on Next in case the queue was still loading. */
+const OPEN_RIVERSIDE = [
+  selectChip('Riverside', 'Riverside'),
+  { do: 'capture', key: 'coaFile', target: { sel: '.rq-card .card-meta' }, parse: (t) => t.split(' · ').pop().trim() },
+  { do: 'click', target: { sel: '.rq-disclosure-toggle' }, skipIf: { sel: '.rq-disclosure-body' }, optional: true },
+];
 
+const BEATS = [
   /* ---------------- Live Run ---------------- */
-  { page: P.live, lead: 'Check the supplier inbox',
-    rest: 'One click scans up to five unread emails with attachments from the last month. This run is replayed from sample data — no AI is called in this demo.',
+  { page: P.live, lead: 'Scan the inbox',
+    rest: 'One click checks unread supplier email. Fictional data, replayed; no AI is called.',
     target: { any: [{ within: { sel: '.live-run-empty' }, text: 'Run once' }, { sel: '.page-header .btn.primary' }] },
-    cta: 'Next clicks Run once', busy: 'Starting the run…', once: 'run',
+    busy: 'Starting the run…', once: 'run',
     actions: [{ do: 'click', target: { within: { sel: '.live-run-empty' }, text: 'Run once' }, skipIf: { sel: '.timeline' }, until: { sel: '.timeline' } }] },
-  { page: P.live, lead: 'Every stage, streamed and priced',
-    rest: 'Each email moves through a relevance check, classify and extract, validation, and a draft report. Each AI call has a small cost, shown live in the counter.',
-    target: { any: [{ sel: '.live-run-emails' }, { sel: '.timeline' }] }, wait: 15000 },
-  { page: P.live, lead: 'Junk stops early, failures stay isolated',
-    rest: "A trade-show promo fails the cheap relevance check first and is left unread. Later, an unreadable phone photo fails on its own while the PDF in the same email carries on.",
-    target: { sel: '.live-run-email', has: '.timeline-dot.skipped' }, wait: 25000,
-    cta: 'Next opens Review Queue', busy: 'Finishing the run…',
+  { page: P.live, lead: 'Junk gets skipped',
+    rest: 'A trade-show promo fails a cheap check and is left unread.',
+    target: { sel: '.live-run-email', has: '.timeline-dot.skipped' }, wait: 25000, busy: 'Finishing the run…',
     actions: [{ do: 'wait', target: { any: [{ sel: '.run-result' }, { sel: '.live-run-page .error-banner' }] }, timeout: 60000, skipUnless: { sel: '.live-run-page .timeline' }, optional: true }] },
 
   /* ---------------- Review Queue ---------------- */
-  { page: P.queue, lead: 'Nothing files itself', replaySkip: true,
-    rest: "New documents wait here, held in a review folder and not yet filed, until a person approves them. Let's open Riverside's certificate.",
-    target: { any: [{ sel: '.rq-filmstrip' }, { sel: '.rq-card' }] }, wait: 12000, cta: 'Next opens the CoA',
-    actions: [
-      selectChip('Riverside', 'Riverside'),
-      { do: 'capture', key: 'coaFile', target: { sel: '.rq-card .card-meta' }, parse: (t) => t.split(' · ').pop().trim() },
-      { do: 'click', target: { sel: '.rq-disclosure-toggle' }, skipIf: { sel: '.rq-disclosure-body' }, optional: true },
-    ] },
-  { page: P.queue, lead: 'The LLM reads, the code judges',
-    rest: 'The LLM reports each checklist item as present, missing, or mismatched. Then fixed code applies the severities from your checklist: any critical miss is Issues, any advisory miss is Advisory, otherwise Pass.',
-    target: { union: [{ any: [{ sel: '.rq-disclosure' }, { sel: '.rq-card-scroll' }] }, { sel: '.rq-card-status-row' }] } },
-  { page: P.queue, lead: 'Clean pass. File it.',
-    rest: 'Approving moves it out of the review folder and into its real company and ingredient folder.',
+  { page: P.queue, lead: 'AI reads, code judges', replaySkip: true,
+    rest: 'The AI reports what it found. Fixed code sets Pass, Advisory, or Issues.',
+    target: { union: [{ any: [{ sel: '.rq-disclosure' }, { sel: '.rq-card-scroll' }] }, { sel: '.rq-card-status-row' }] }, wait: 12000,
+    pre: OPEN_RIVERSIDE, actions: OPEN_RIVERSIDE },
+  { page: P.queue, lead: 'Clean pass, approved',
+    rest: 'A person approves it, and only then is it filed.',
     target: { any: [{ sel: '.rq-target-box' }, footerBtn('Approve & file')] },
-    cta: 'Next clicks Approve & file', once: 'approve-coa',
+    once: 'approve-coa',
     actions: [
       selectChip('Riverside', 'Riverside'),
       { do: 'assert', target: chipSelected('Riverside') },
       { do: 'click', target: footerBtn('Approve & file'), after: 500 },
     ],
     then: [selectChip('Coastal', 'Coastal')] },
-  { page: P.queue, lead: 'Advisory: approvable, with a reason', replaySkip: true,
-    rest: "The CoA is filed. This kosher certificate's number format looks off (highlighted in the checklist): advisory, not critical.",
-    target: { any: [failRow('advisory'), { sel: '.rq-card-status-row' }] }, cta: 'Next clicks Approve & file',
+  { page: P.queue, lead: 'Advisory: minor gap', replaySkip: true,
+    rest: "The kosher certificate's number format looks off. Approving needs a reason.",
+    target: { any: [failRow('advisory'), { sel: '.rq-card-status-row' }] },
     actions: [
       selectChip('Coastal', 'Coastal'),
       { do: 'assert', target: chipSelected('Coastal') },
       { do: 'click', target: footerBtn('Approve & file'), skipIf: modalWith('Approve without a clean pass'), until: modalWith('Approve without a clean pass') },
     ] },
-  { page: P.queue, lead: 'Overrides need a written reason',
-    rest: "Approving without a clean pass needs a reason, and the server enforces that too. It's recorded in the audit log under your name (the demo doesn't display the log).",
-    target: modalWith('Approve without a clean pass'), cta: 'Next types a reason and approves',
+  { page: P.queue, lead: 'Overrides need a reason',
+    rest: 'The reason is required and recorded.',
+    target: modalWith('Approve without a clean pass'),
     once: 'approve-kosher',
     actions: [
       { do: 'type', target: { within: modalWith('Approve without a clean pass'), sel: 'textarea' }, value: OVERRIDE_REASON, skipIfFilled: true },
       { do: 'click', target: { within: modalWith('Approve without a clean pass'), text: 'Approve anyway' }, after: 600 },
     ],
     then: [selectChip('Meridian', 'Meridian')] },
-  { page: P.queue, lead: 'Issues: a critical gap', replaySkip: true,
-    rest: 'The allergen statement has no authorized signature. That field is critical, so code marks it Issues.',
-    target: { any: [failRow('critical'), { sel: '.rq-disclosure' }, { sel: '.rq-card-status-row' }] }, cta: 'Next clicks Reject',
+  { page: P.queue, lead: 'Critical gap: rejected', replaySkip: true,
+    rest: 'The allergen statement is unsigned. Rejected files go to quarantine, not the trash.',
+    target: { any: [failRow('critical'), { sel: '.rq-disclosure' }, { sel: '.rq-card-status-row' }] },
+    once: 'reject-allergen',
     actions: [
       selectChip('Meridian', 'Meridian'),
       { do: 'assert', target: chipSelected('Meridian') },
       { do: 'click', target: footerBtn('Reject'), skipIf: modalWith('Reject this document?'), until: modalWith('Reject this document?') },
+      { do: 'pause', ms: 900 },
       { do: 'pick', target: { sel: '.reject-reason-select' }, value: 'Needs supplier follow-up' },
-    ] },
-  { page: P.queue, lead: 'Reject, with a reason',
-    rest: 'Rejected documents go to quarantine, not the trash. They can be corrected, re-filed, or followed up.',
-    target: modalWith('Reject this document?'), cta: 'Next confirms the rejection', once: 'reject-allergen',
-    actions: [
-      { do: 'pick', target: { sel: '.reject-reason-select' }, value: 'Needs supplier follow-up', optional: true },
+      { do: 'pause', ms: 700 },
       { do: 'click', target: { within: modalWith('Reject this document?'), sel: '.confirm-modal-primary' }, after: 600 },
     ],
     then: [selectChip('Non-GMO', 'Highland')] },
-  { page: P.queue, lead: 'No checklist, no verdict', replaySkip: true,
-    rest: "Nobody has defined a Non-GMO checklist yet, so this can't pass. You can fix that right here.",
+  { page: P.queue, lead: 'No checklist? AI drafts one', replaySkip: true,
+    rest: 'Nothing defines Non-GMO yet, so the AI drafts one from this document.',
     target: { any: [{ sel: '.rq-disclosure-empty', has: '.rq-match-btn' }, { sel: '.rq-card-status-row' }] },
-    cta: 'Next starts a new checklist',
+    busy: 'Drafting…', once: 'generate-checklist',
     actions: [
       selectChip('Non-GMO', 'Highland'),
       { do: 'click', target: { sel: '.rq-match-btn' }, skipIf: { any: [{ sel: '.rq-match-backdrop' }, modalWith('Create a checklist')] }, until: { sel: '.rq-match-backdrop .modal' } },
       { do: 'click', target: { within: { sel: '.rq-match-backdrop' }, text: 'Create new instead' }, skipIf: modalWith('Create a checklist'), until: modalWith('Create a checklist') },
+      { do: 'click', target: { within: modalWith('Create a checklist'), text: 'Generate checklist' }, until: { sel: '.dt-draft-summary' }, untilTimeout: 25000 },
     ] },
-  { page: P.queue, lead: 'Let the LLM draft it — you own it',
-    rest: 'The LLM drafts required fields and rules from this very document. Each item is marked critical or advisory, and every line is editable before you use it. Nothing applies until you approve.',
-    target: modalWith('Create a checklist'), cta: 'Next clicks Generate checklist', busy: 'Drafting the checklist…', once: 'generate-checklist',
-    actions: [{ do: 'click', target: { within: modalWith('Create a checklist'), text: 'Generate checklist' }, until: { sel: '.dt-draft-summary' }, untilTimeout: 25000 }] },
-  { page: P.queue, lead: 'Does this document expire?',
-    rest: 'This Non-GMO statement carries no expiry date, so the answer is No. Programs that re-request yearly can set a renewal interval.',
-    target: { any: [{ sel: '.dt-expiration-detected' }, { sel: '.dt-expiration' }, { sel: '.dt-draft-summary' }] }, wait: 8000,
-    cta: 'Next answers No and saves', busy: 'Matching and validating…', once: 'use-checklist',
+  { page: P.queue, lead: 'You review, then save',
+    rest: 'Every line is editable. Nothing applies until you approve.',
+    target: { any: [{ sel: '.dt-draft-summary' }, modalWith('Review the generated checklist')] }, wait: 8000,
+    busy: 'Matching and validating…', once: 'use-checklist',
     actions: [
       { do: 'click', target: { within: { sel: '.dt-expiration-detected' }, text: 'Not this field' }, skipUnless: { sel: '.dt-expiration-detected' }, optional: true, after: 250 },
       { do: 'click', target: { within: { sel: '.dt-expiration-toggle' }, text: 'No', exact: true }, after: 450 },
       { do: 'click', target: { within: modalWith('Review the generated checklist'), text: 'Use this checklist' }, until: { sel: '.rq-match-result' }, untilTimeout: 20000 },
+      { do: 'click', target: { within: { sel: '.rq-match-result' }, text: 'Done' }, optional: true, after: 300 },
     ] },
-  { page: P.queue, lead: 'Same document, now passing',
-    rest: 'Drafted from this document, so it passes by construction. In practice you draft from reference documents you designate, then new arrivals are judged against it.',
-    target: { any: [{ sel: '.rq-match-result' }, { sel: '.rq-card-status-row' }] }, wait: 6000, cta: 'Next opens Document Types',
-    actions: [{ do: 'click', target: { within: { sel: '.rq-match-result' }, text: 'Done' }, optional: true, after: 300 }] },
-
-  /* ---------------- Document Types ---------------- */
-  { page: P.types, lead: 'One checklist per document type',
-    rest: "Each type has its own required fields and format rules. Let's open the CoA checklist.",
-    target: { any: [{ sel: '.dt-list' }, { sel: '.dt-card' }] }, cta: 'Next opens Certificate of Analysis',
-    actions: [{ do: 'click', target: { sel: '.dt-row', contains: 'Certificate of Analysis' }, skipIf: { sel: '.dt-modal-head' }, until: { sel: '.dt-modal-head' } }] },
-  { page: P.types, lead: 'Severity drives the outcome',
-    rest: 'Each item is critical or advisory. That setting, not the model, decides Issues versus Advisory. Sample documents of this type sit beside the checklist. In production these are the reference documents you designate.',
-    target: { any: [{ sel: '.dt-schema-list' }, { sel: '.dt-docs-panel' }, { sel: '.dt-modal-head' }] }, cta: 'Next closes it',
-    actions: [{ do: 'click', target: { within: { sel: '.dt-modal-head' }, text: 'Close' }, optional: true, after: 300 }] },
-  { page: P.types, lead: 'Editable, and safely deletable',
-    rest: 'Change any checklist anytime. Deleted ones wait in Trash for 30 days before they are gone.',
-    target: { any: [{ within: { sel: '.dt-header-actions' }, text: 'Trash' }, { sel: '.dt-card' }] }, cta: 'Next opens Companies' },
-
-  /* ---------------- Companies ---------------- */
-  { page: P.companies, lead: 'Same supplier, spelled two ways',
-    rest: '“Coastal Cane Sugar Company” is likely Coastal Cane Sugar Co., shown with a confidence score and never merged quietly. Ingredient names drift the same way, and those variants wait for a human decision.',
-    target: { any: [{ sel: '.company-matches', contains: 'Possible matches' }, { sel: '.company-panel' }] },
-    cta: 'Next clicks Confirm', once: 'confirm-company',
-    actions: [{ do: 'click', target: { within: { within: { sel: '.company-matches', contains: 'Possible matches' }, sel: '.company-match-row', contains: 'Coastal' }, text: 'Confirm' }, after: 500 }],
-    then: [{ do: 'click', target: { sel: '.company-card', contains: 'Coastal Cane' }, skipIf: { sel: '.company-info-window' }, until: { sel: '.company-info-window' }, optional: true }] },
-  { page: P.companies, lead: 'Everything about one supplier',
-    rest: 'Contact email, known aliases, and every filed document, in one place.',
-    target: { any: [{ sel: '.company-info-window' }, { sel: '.company-panel' }] }, cta: 'Next opens Token Usage',
-    actions: [{ do: 'click', target: { within: { sel: '.company-info-window' }, text: 'Close' }, optional: true, after: 300 }] },
-
-  /* ---------------- Token Usage ---------------- */
-  { page: P.usage, lead: 'What each AI call costs',
-    rest: 'Usage is counted in tokens, the units of text a model reads and writes, and priced per call. Totals are broken out by pipeline stage and by person, so spend is never anonymous.',
-    target: { union: [{ sel: '.card-usage-total' }, { sel: '.card-usage-stage' }, { sel: '.card-usage-actor' }] }, cta: 'Next opens Notices' },
 
   /* ---------------- Notices ---------------- */
-  { page: P.notices, lead: 'Loose ends and disagreements, in one place',
-    rest: "Doc types missing a checklist and ingredient matches awaiting review collect here automatically. So do values that disagree, like a company address that differs across a supplier's filed documents (highlighted): flagged, never blocked.",
-    target: { any: [{ sel: '.notices-section', contains: 'Inconsistent values' }, { sel: '.notices-section' }] } },
-  { page: P.notices, lead: 'Overdue, caught automatically',
-    rest: "Riverside's annual heavy-metals retest came due three days ago. Nobody had to remember to check.",
-    target: { any: [{ within: { sel: '.notices-section', contains: 'Expiring' }, sel: '.notice-row', contains: 'Riverside' }, { sel: '.notices-section', contains: 'Expiring' }] },
-    cta: 'Next opens it and drafts a request',
+  { page: P.notices, lead: 'Problems surface themselves',
+    rest: "Riverside's heavy-metals retest is overdue. Nobody had to remember.",
+    target: { any: [{ within: { sel: '.notices-section', contains: 'Expiring' }, sel: '.notice-row', contains: 'Riverside' }, { sel: '.notices-section', contains: 'Expiring' }] }, wait: 6000,
     actions: [
       { do: 'click', target: { within: { sel: '.notices-section', contains: 'Expiring' }, sel: '.notice-row', contains: 'Riverside' }, skipIf: { sel: '.di-modal' }, until: { sel: '.di-modal-header' }, untilTimeout: 8000 },
       { do: 'click', target: { within: { sel: '.di-modal-header' }, text: 'Request updated document' }, skipIf: { sel: '.rdm-body' }, until: { sel: '.rdm-body' } },
     ] },
-  { page: P.notices, lead: 'A follow-up, pre-written',
-    rest: 'Edit anything first. Nothing goes out until someone clicks Send. In this demo nothing is actually sent: the request is drafted and marked sent (simulated).',
+  { page: P.notices, lead: 'Follow-up, pre-written',
+    rest: 'Edit it, then send. Simulated here; nothing is emailed.',
     target: { any: [modalWith('Request updated document'), { sel: '.di-modal-header' }] },
-    cta: 'Next clicks Send', once: 'send-request',
+    once: 'send-request',
     actions: [
       { do: 'click', target: { within: modalWith('Request updated document'), text: 'Send' }, after: 700 },
     ],
-    then: [{ do: 'click', target: { within: { sel: '.di-modal-header' }, text: 'Close' }, skipIf: { sel: '.rdm-body' }, optional: true, after: 250 }] },
-
-  /* ---------------- Email History ---------------- */
-  { page: P.email, lead: 'Every request, tracked',
-    rest: 'Grouped by supplier and ingredient: sent, failed with a one-click retry, or still a draft.',
-    target: { any: [{ sel: '.eh-list-pane' }, { sel: '.eh-panel' }] }, wait: 4000, cta: 'Next opens your simulated request',
-    actions: [{ do: 'click', target: { sel: '.eh-list-row', contains: 'Heavy Metals' }, optional: true, after: 200 }] },
-  { page: P.email, lead: 'Threaded and on file',
-    rest: "The full email is kept. When the document arrived by email, the request goes out as a reply on the supplier's original thread.",
-    target: { any: [{ sel: '.eh-detail-pane' }, { sel: '.eh-panel' }] }, cta: 'Next opens Document Index' },
+    then: [
+      { do: 'wait', gone: true, target: { sel: '.rdm-body' }, timeout: 4000, optional: true },
+      // after: outlast the modal's 150ms exit so the filter typed next can't race it
+      { do: 'click', target: { within: { sel: '.di-modal-header' }, text: 'Close' }, skipIf: { sel: '.rdm-body' }, optional: true, after: 450 },
+    ] },
 
   /* ---------------- Document Index ---------------- */
-  { page: P.index, lead: 'Filed, and findable',
-    rest: 'The CoA you approved minutes ago is now in the index, searchable by company, ingredient, or type.',
+  { page: P.index, lead: 'Filed and findable',
+    rest: 'The certificate you approved is now searchable.',
     pre: [{ do: 'type', target: { within: { sel: '.filter-row' }, sel: 'input.input' }, value: (v) => v.coaFile || 'Riverside', instant: false }],
     target: { any: [
       { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: (v) => v.coaFile || 'Certificate of Analysis' },
       { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: 'Riverside' },
-      { sel: '.di-table-frame' }] }, wait: 6000, cta: 'Next opens it',
+      { sel: '.di-table-frame' }] }, wait: 6000,
     actions: [
       { do: 'wait', settle: 700, optional: true, timeout: 8000, target: { any: [
         { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: (v) => v.coaFile || 'Certificate of Analysis' },
@@ -810,10 +608,6 @@ const BEATS = [
       { do: 'click', retry: 2, target: { any: [
         { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: (v) => v.coaFile || 'Certificate of Analysis' },
         { within: { sel: '.di-table-scroll' }, sel: 'tr', contains: 'Riverside' }] }, skipIf: { sel: '.di-modal' }, until: { sel: '.di-modal' }, untilTimeout: 2500, optional: true }] },
-  { page: P.index, lead: 'It got here one way',
-    rest: 'This is its real folder path. It only arrived because a person approved it, and the approval is recorded in the audit log.',
-    target: { any: [{ sel: '.di-detail-collapse.open .di-detail-meta-path' }, { sel: '.di-detail-collapse.open .di-list-row-detail' }, { sel: '.di-modal' }] },
-    cta: 'Next: the wrap-up' },
 ];
 const N = BEATS.length;
 
@@ -824,13 +618,13 @@ const $ = (id) => document.getElementById(id);
 const landing = $('landing'), tour = $('tour'), frame = $('app-frame');
 const spot = $('spot'), tap = $('tap'), spotLayer = $('spot-layer'), stageEl = $('stage');
 const loadingEl = $('loading'), loadingMsg = $('loading-msg');
-const gBody = $('g-body'), gTitle = $('g-title'), gText = $('g-text'), gContext = $('g-context'), gCta = $('g-cta');
-const gPage = $('g-page'), gPageCount = $('g-pagecount'), gIcon = $('g-icon'), gStatus = $('g-status');
-const gStep = $('g-step'), gBar = $('g-bar'), gBarFill = $('g-bar-fill'), gDots = $('g-dots');
+const gBody = $('g-body'), gTitle = $('g-title'), gText = $('g-text');
+const gPage = $('g-page'), gIcon = $('g-icon'), gStatus = $('g-status');
+const gStep = $('g-step'), gBar = $('g-bar'), gBarFill = $('g-bar-fill');
 const btnNext = $('g-next'), btnPrev = $('g-prev'), btnNextLabel = $('g-next-label'), btnCollapse = $('g-collapse');
 const pill = $('g-pill'), pillLabel = $('g-pill-label'), pillNext = $('g-pill-next'), pillExpand = $('g-pill-expand');
 const gStrip = $('g-strip'), stripNext = $('g-strip-next'), stripOpen = $('g-strip-open'), stripLabel = $('g-strip-label');
-const endEl = $('end'), cLine = $('c-line'), cDot = $('c-dot');
+const endEl = $('end');
 const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
 // The app honours ?theme=light|dark, so app and shell agree with the visitor's system setting.
 const APP_URL = `app/?embedded=1&theme=${darkMQ.matches ? 'dark' : 'light'}`;
@@ -1093,7 +887,8 @@ async function doAction(a, ep, fast = false) {
       return true;
     }
     case 'wait': {
-      const el = await waitUntil(() => resolve(a.target), cap(a.timeout ?? 8000, fast), ep);
+      // `gone`: wait for the target to be absent (a modal still animating out counts as gone).
+      const el = await waitUntil(() => (a.gone ? (resolve(a.target) ? null : true) : resolve(a.target)), cap(a.timeout ?? 8000, fast), ep);
       // `settle`: let a debounced refetch finish re-rendering rows before the next action clicks one.
       if (el && a.settle && !fast) await sleep(a.settle);
       return !!el;
@@ -1106,7 +901,7 @@ async function doAction(a, ep, fast = false) {
       return true;
     }
     case 'pause':
-      await sleep(a.ms || 300);
+      await sleep(fast ? Math.min(a.ms || 300, 150) : (a.ms || 300));
       return true;
     default:
       return true;
@@ -1194,15 +989,20 @@ function setStatus(msg, spinning) {
 }
 function updateNextLabel() {
   if (S.busy) { btnNextLabel.textContent = 'Working'; return; }
-  btnNextLabel.textContent = S.cur === N - 1 ? 'Finish' : 'Next';
+  const l = S.cur === 0 ? 'Run' : S.cur === N - 1 ? 'Finish' : 'Next';
+  btnNextLabel.textContent = l;
+  pillNext.innerHTML = stripNext.innerHTML = `${l} <span aria-hidden="true">→</span>`;
 }
 
-async function enterBeat(i, ep, { forward = false, forceNav = false, quiet = false } = {}) {
+async function enterBeat(i, ep, { forward = false, forceNav = false } = {}) {
   const b = BEATS[i];
   const pageChanged = S.cur < 0 || BEATS[S.cur].page !== b.page;
   if (pageChanged || forceNav) await ensureNav(PAGES[b.page].nav, ep);
-  if (forward && b.pre) await runList(b.pre, 0, ep, laterOnceDone(i));
-  render(i, { quiet });
+  if (forward && b.pre) {
+    const replay = laterOnceDone(i);
+    if (!(replay && b.replaySkip)) await runList(b.pre, 0, ep, replay);
+  }
+  render(i);
 }
 
 async function next() {
@@ -1229,6 +1029,7 @@ async function next() {
 async function prev() {
   if (!S.started || S.busy || S.cur <= 0) return;
   clearTimeout(S.autoTimer);
+  S.ended = false; // Back from a dismissed end card resumes the tour
   const ep = S.epoch;
   setBusy(true, 'Going back…');
   try { await enterBeat(S.cur - 1, ep); }
@@ -1236,68 +1037,35 @@ async function prev() {
   finally { if (ep === S.epoch) setBusy(false); }
 }
 
-/* Jump via the section dots. Forward jumps replay each skipped beat's actions
-   in order (fast-forward), so the app ends up in the state the narration
-   assumes; backward jumps only move the narration (actions aren't undone). */
-async function goToStep(t) {
-  if (!S.started || S.busy || t === S.cur || t < 0 || t >= N) return;
-  clearTimeout(S.autoTimer);
-  const ep = S.epoch;
-  setBusy(true, t > S.cur ? 'Catching up…' : 'Going back…');
-  try {
-    if (t < S.cur) { await enterBeat(t, ep, { forceNav: true }); }
-    else {
-      while (S.cur < t) {
-        await runBeatActions(S.cur, 0, ep);
-        await enterBeat(S.cur + 1, ep, { forward: true, quiet: S.cur + 1 < t });
-      }
-    }
-  } catch (e) { if (e !== CANCEL) console.warn('[tour]', e); }
-  finally { if (ep === S.epoch) setBusy(false); }
-}
-
 /* =========================================================================
    Rendering the guide
    ========================================================================= */
-gDots.innerHTML = PAGES.map((p, i) => `<button type="button" class="g-dot" data-page="${i}" aria-label="Jump to ${p.title}" title="${p.title}"></button>`).join('');
-[...gDots.children].forEach((d) => d.addEventListener('click', () => {
-  const first = BEATS.findIndex((b) => b.page === +d.dataset.page);
-  if (first >= 0) goToStep(first);
-}));
 btnCollapse.innerHTML = icon('minus', 14);
 gBar.setAttribute('aria-valuemax', String(N));
 
-function render(i, { quiet = false } = {}) {
+function render(i) {
   S.cur = i;
   const b = BEATS[i], page = PAGES[b.page];
   const gen = ++S.spotGen;
   const swap = () => {
     gIcon.innerHTML = icon(page.icon, 13);
     gPage.textContent = page.title;
-    gPageCount.textContent = '';
-    gContext.textContent = page.sub;
     gTitle.textContent = b.lead;
     gText.textContent = b.rest;
-    if (b.cta) { gCta.hidden = false; gCta.innerHTML = `${icon('arrowRight', 13)}<span>${b.cta}</span>`; }
-    else { gCta.hidden = true; gCta.innerHTML = ''; }
     gBody.classList.remove('swap');
   };
-  if (quiet || reduceMotion.matches) swap();
+  if (reduceMotion.matches) swap();
   else { gBody.classList.add('swap'); setTimeout(() => { if (S.cur === i) swap(); }, 120); }
 
-  gStep.textContent = `Step ${i + 1} of ${N}`;
+  const count = `${i + 1} / ${N}`;
+  gStep.textContent = count;
+  stripLabel.textContent = count;
   gBar.setAttribute('aria-valuenow', String(i + 1));
   gBar.setAttribute('aria-valuetext', `Step ${i + 1} of ${N}: ${b.lead}`);
   gBarFill.style.width = `${((i + 1) / N) * 100}%`;
-  [...gDots.children].forEach((d, di) => {
-    d.classList.toggle('active', di === b.page);
-    d.classList.toggle('done', di < b.page);
-    if (di === b.page) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current');
-  });
-  stripLabel.textContent = `Step ${i + 1} of ${N}`;
   setDis(btnPrev, S.busy || i <= 0);
   updateNextLabel();
-  if (!quiet) showBeatSpot(b, gen);
+  showBeatSpot(b, gen);
 }
 
 /* =========================================================================
@@ -1310,18 +1078,13 @@ async function showBeatSpot(b, gen) {
   const idx = BEATS.indexOf(b);
   const replay = laterOnceDone(idx);
   const timeout = replay ? Math.min(b.wait ?? 3000, 900) : (b.wait ?? 3000);
-  const slowTimer = setTimeout(() => {
-    if (gen !== S.spotGen) return;
-    clearSpot(); // don't leave the previous beat's ring pointing at the wrong thing
-    // Only a beat that is expected to take a while gets a status line, and it stays neutral.
-    if (!S.busy && !replay && (b.wait ?? 0) >= 6000) setStatus('Getting this view ready…', true);
-  }, 900);
+  // Don't leave the previous beat's ring pointing at the wrong thing while the target loads.
+  const slowTimer = setTimeout(() => { if (gen === S.spotGen) clearSpot(); }, 900);
   let els = null;
   try { els = await waitUntil(() => (gen === S.spotGen ? resolveTargets(b.target) : ['stale']), timeout); }
   catch { els = null; }
   clearTimeout(slowTimer);
   if (gen !== S.spotGen || (els && els[0] === 'stale')) return;
-  if (!S.busy) setStatus('');
   if (!els || !els.length) { clearSpot(); return; } // graceful: narration without a spotlight
   if (!reduceMotion.matches) await settleRects(els);   // let drawers / modals finish sliding in
   if (gen !== S.spotGen) return;
@@ -1351,7 +1114,6 @@ function setSpotOn(els, pulse, spec = null) {
 function clearSpot() {
   S.track = null;
   spot.classList.remove('on', 'pulse');
-  hideConnector();
 }
 
 function unionRect(els) {
@@ -1406,31 +1168,12 @@ function kick() { stableN = 0; if (!pending) schedule(); }
 function tick(id) {
   if (id !== loopId) return;
   pending = false;
-  if (!S.track || !tour.classList.contains('on')) { hideConnector(); return; }
+  if (!S.track || !tour.classList.contains('on')) return;
   const ok = positionSpot();
-  if (ok) drawConnector(); else hideConnector();
   const sig = ok ? `${spot.style.left}|${spot.style.top}|${spot.style.width}|${spot.style.height}` : 'x';
   if (sig === lastSig) stableN++; else { stableN = 0; lastSig = sig; }
   if (stableN >= 30) return;
   schedule();
-}
-
-function hideConnector() { cLine.style.opacity = 0; cDot.style.opacity = 0; }
-function drawConnector() {
-  const guide = $('guide');
-  if (S.collapsed && !narrowMQ.matches) { hideConnector(); return; }
-  if (!guide.offsetWidth || S.ended) { hideConnector(); return; }
-  const sr = spot.getBoundingClientRect(), gr = guide.getBoundingClientRect();
-  if (sr.width < 2) { hideConnector(); return; }
-  const gc = { x: gr.left + gr.width / 2, y: gr.top + gr.height / 2 };
-  const sc = { x: sr.left + sr.width / 2, y: sr.top + sr.height / 2 };
-  const clamp = (rc, px, py) => ({ x: Math.max(rc.left, Math.min(px, rc.right)), y: Math.max(rc.top, Math.min(py, rc.bottom)) });
-  const p1 = narrowMQ.matches ? { x: Math.max(gr.left + 24, Math.min(sc.x, gr.right - 24)), y: gr.top } : { x: gr.left, y: Math.max(gr.top + 24, Math.min(sc.y, gr.bottom - 24)) };
-  const p2 = clamp(sr, gc.x, gc.y);
-  cLine.setAttribute('x1', p1.x); cLine.setAttribute('y1', p1.y);
-  cLine.setAttribute('x2', p2.x); cLine.setAttribute('y2', p2.y);
-  cDot.setAttribute('cx', p2.x); cDot.setAttribute('cy', p2.y);
-  cLine.style.opacity = 0.55; cDot.style.opacity = 1;
 }
 
 /* =========================================================================
@@ -1549,7 +1292,6 @@ function showLanding() {
   landing.setAttribute('aria-hidden', 'false');
   tour.classList.remove('on');
   tour.setAttribute('aria-hidden', 'true');
-  hideConnector();
   $('start-label').textContent = S.started && !S.ended ? 'Resume the walkthrough' : 'Start the walkthrough';
   $('start-btn').focus({ preventScroll: true });
 }
@@ -1590,6 +1332,7 @@ async function start() {
   setBusy(true, 'Loading…');
   try { await enterBeat(0, ep, { forceNav: true }); } catch (e) { if (e !== CANCEL) render(0); }
   finally { if (ep === S.epoch) setBusy(false); }
+  recenter(); // the sidebar collapse on narrow screens can shift the first target after it was measured
   btnNext.focus({ preventScroll: true });
 }
 
@@ -1632,44 +1375,24 @@ async function restart() {
   btnNext.focus({ preventScroll: true });
 }
 
-const RECAP = [
-  ['var(--brand)', 'shield', 'Nothing is filed on trust.', 'Documents wait in a review folder until a person approves them, and overriding a failed check takes a written reason.'],
-  ['var(--accent)', 'bell', 'Problems surface on their own.', 'Expiring documents, missing checklists, name drift, and disagreeing values show up in Notices, with follow-up requests drafted for you (simulated here).'],
-  ['var(--amber)', 'scan', 'Every stage is visible.', 'Live Run streams each step as it happens, and each AI call has a small cost shown by stage and by person.'],
-];
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const contactOk = !!(CONTACT.href && CONTACT.label && /^(https?:|mailto:)/i.test(CONTACT.href.trim()));
 const contactBtn = contactOk
   ? `<a class="btn primary" id="end-contact" href="${esc(CONTACT.href.trim())}"${/^https?:/i.test(CONTACT.href.trim()) ? ' target="_blank" rel="noopener"' : ''}>${esc(CONTACT.label)}</a>`
   : '';
 endEl.innerHTML = `
-  <div class="card end-card">
-    <span class="pill">${icon('sparkles', 12)}Walkthrough complete</span>
-    <h2 id="end-title">The LLM reads. The code judges. The human decides.</h2>
-    <ul class="recap">${RECAP.map(([c, ic, b, tx]) => `<li><span class="chip" style="background:${c}">${icon(ic, 14, '#fff', 2)}</span><span><b>${b}</b> ${tx}</span></li>`).join('')}</ul>
-    <p class="end-note">Built as a working prototype. Everything you saw ran on fictional suppliers and sample documents. No real customer data or results are shown.</p>
+  <div class="end-card">
+    <h2 id="end-title">The AI reads. The code judges. The human decides.</h2>
+    <p class="end-line">That's the whole loop.</p>
+    <p class="end-fine">Fictional sample data. No AI is called.</p>
     <div class="end-actions">
       ${contactBtn}
-      <button type="button" class="btn" id="end-explore">Explore on your own</button>
-      <button type="button" class="btn ghost" id="end-restart">${icon('restart', 15)}Restart the walkthrough</button>
-      <button type="button" class="btn ghost" id="end-overview">Back to overview</button>
+      <button type="button" class="btn ${contactOk ? 'ghost' : 'primary'}" id="end-explore">Explore the app</button>
+      <button type="button" class="btn ghost" id="end-restart">Restart</button>
     </div>
-    <details class="built">
-      <summary><span class="chev">${icon('chevRight', 14)}</span>How it's built</summary>
-      <ul>
-        <li><b>Backend:</b> Node.js and Express, with SQLite through Node's built-in <code>node:sqlite</code>. Documents, the review queue, checklists, and an append-only audit log live there.</li>
-        <li><b>Frontend:</b> React, built with Vite. This walkthrough drives that same UI.</li>
-        <li><b>LLM layer:</b> provider-agnostic. Gemini, Claude, or Groq is one setting; each provider implements a single JSON-generation call.</li>
-        <li><b>Integrations:</b> Gmail and Dropbox over OAuth refresh tokens. Documents are held in a Dropbox review folder until a reviewer approves them.</li>
-        <li><b>Safe filing:</b> Approve only succeeds once the file move into the real folder is confirmed, so a failure leaves the document staged, not misfiled.</li>
-        <li><b>Live Run:</b> pipeline progress, including token usage, streams to the browser over Server-Sent Events.</li>
-        <li><b>This demo:</b> the real React app, with every API call answered in your browser from fictional fixtures. No email is read or sent, nothing is stored, and no AI model is called.</li>
-      </ul>
-    </details>
   </div>`;
 $('end-restart').addEventListener('click', () => restart());
 $('end-explore').addEventListener('click', () => { hideEnd(); clearSpot(); setCollapsed(true); });
-$('end-overview').addEventListener('click', () => { hideEnd(); showLanding(); });
 
 /* The end card is a modal: everything behind it is inert, and Tab stays inside it. */
 let endReturnFocus = null;
@@ -1718,7 +1441,6 @@ pillExpand.addEventListener('click', () => { setCollapsed(false); btnNext.focus(
 $('restart-btn').addEventListener('click', () => restart());
 $('overview-btn').addEventListener('click', () => showLanding());
 $('start-btn').addEventListener('click', start);
-$('start-link').addEventListener('click', (e) => { e.preventDefault(); start(); });
 
 window.addEventListener('keydown', (e) => {
   if (!tour.classList.contains('on')) return;
@@ -1726,7 +1448,7 @@ window.addEventListener('keydown', (e) => {
   if (!endEl.hidden) {
     if (e.key === 'Escape') { e.preventDefault(); hideEnd(); }
     else if (e.key === 'Tab') {
-      const f = [...endEl.querySelectorAll('button:not([disabled]), a[href], summary')].filter((x) => x.offsetParent !== null);
+      const f = [...endEl.querySelectorAll('button:not([disabled]), a[href]')].filter((x) => x.offsetParent !== null);
       if (!f.length) return;
       const first = f[0], last = f[f.length - 1];
       if (!endEl.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
