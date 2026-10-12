@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Forager Interactive Walkthrough</title>
 <meta name="description" content="A 2-minute guided walkthrough of Forager, a supplier-document intake pipeline: the AI reads, the code judges, the human decides. Fictional sample data; no AI is called." />
-<meta name="color-scheme" content="light dark" />
+<meta name="color-scheme" content="light" />
 <style>
   /* ===================================================================
      Tokens: mirror frontend/src/index.css so the shell, landing, and
@@ -52,33 +52,6 @@
     --guide-w: 360px;
     color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      /* Mirrors frontend/src/index.css dark tokens: #4b5ea9 for fills, #8e9de0 for text only. */
-      --brand: #4b5ea9;
-      --brand-text: #8e9de0;
-      --brand-deep: #5d71c0;
-      --brand-bg: rgba(75, 94, 169, 0.22);
-      --brand-ring: rgba(142, 157, 224, 0.34);
-      --accent-text: #3fd39b;
-      --amber-text: #f5b84a;
-      --red-text: #ff8a94;
-      --amber-bg: rgba(240, 182, 79, 0.2);
-      --bg: #1c1d22;
-      --panel: rgba(44, 46, 54, 0.68);
-      --panel-solid: #2c2e36;
-      --border: rgba(255, 255, 255, 0.095);
-      --border-strong: rgba(255, 255, 255, 0.18);
-      --text: #eeeeed;
-      --text-2: #aaabb1;
-      --text-3: #9a9ba3;
-      --shadow-card: 0 10px 26px -14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      --shadow-float: 0 18px 40px -12px rgba(0, 0, 0, 0.6);
-      --dim: rgba(0, 0, 0, 0.55);
-      color-scheme: dark;
-    }
-  }
-
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
@@ -353,7 +326,7 @@
             <span id="start-label">Start the walkthrough</span>
             <span data-icon="arrowRight" data-size="18"></span>
           </button>
-          <a class="text-link" href="app/" id="explore-link">Explore on your own</a>
+          <a class="text-link" href="app/?theme=light" id="explore-link">Explore on your own</a>
         </div>
         <div class="l-error" id="l-error" hidden></div>
       </section>
@@ -625,9 +598,8 @@ const btnNext = $('g-next'), btnPrev = $('g-prev'), btnNextLabel = $('g-next-lab
 const pill = $('g-pill'), pillLabel = $('g-pill-label'), pillNext = $('g-pill-next'), pillExpand = $('g-pill-expand');
 const gStrip = $('g-strip'), stripNext = $('g-strip-next'), stripOpen = $('g-strip-open'), stripLabel = $('g-strip-label');
 const endEl = $('end');
-const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
-// The app honours ?theme=light|dark, so app and shell agree with the visitor's system setting.
-const APP_URL = `app/?embedded=1&theme=${darkMQ.matches ? 'dark' : 'light'}`;
+// Locked to light: the app honours ?theme=, which overrides any theme a visitor saved earlier.
+const APP_URL = 'app/?embedded=1&theme=light';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const narrowMQ = window.matchMedia('(max-width: 819px)');
 const CANCEL = Symbol('cancel');
