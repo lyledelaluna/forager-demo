@@ -613,7 +613,10 @@ const pill = $('g-pill'), pillLabel = $('g-pill-label'), pillNext = $('g-pill-ne
 const gStrip = $('g-strip'), stripNext = $('g-strip-next'), stripOpen = $('g-strip-open'), stripLabel = $('g-strip-label');
 const endEl = $('end');
 // Locked to light: the app honours ?theme=, which overrides any theme a visitor saved earlier.
-const APP_URL = 'app/?embedded=1&theme=light';
+// The minute-bucketed `v` keeps a host's short HTML cache (GitHub Pages: ~10 min) from serving an old
+// app/index.html that points at hashed assets a redeploy has already deleted.
+const APP_V = Math.floor(Date.now() / 60000);
+const APP_URL = `app/?embedded=1&theme=light&v=${APP_V}`;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const narrowMQ = window.matchMedia('(max-width: 819px)');
 const CANCEL = Symbol('cancel');
@@ -1086,12 +1089,10 @@ async function showBeatSpot(b, gen) {
    is tracked as-is. */
 function setSpotOn(els, pulse, spec = null) {
   const wasOn = !!S.track && spot.classList.contains('on') && spot.style.opacity !== '0';
-  if (pulse && wasOn) {
-    spot.classList.add('glide');
-    clearTimeout(S.glideT);
-    S.glideT = setTimeout(() => spot.classList.remove('glide'), 320);
+  if (wasOn) {
+    glideSpot();
   }
-  S.track = { spec, els, lastResolve: performance.now() };
+  S.track = { spec, els, lastResolve: performance.now(), anchor: anchorOf(els), lostAt: 0, jump: false };
   positionSpot();
   spot.classList.add('on');
   if (pulse && !reduceMotion.matches) { spot.classList.remove('pulse'); void spot.offsetWidth; spot.classList.add('pulse'); }
@@ -1113,6 +1114,44 @@ function unionRect(els) {
   return l === Infinity ? null : { left: l, top: t, width: r - l, height: btm - t };
 }
 
+/* When a clicked control is replaced rather than updated in place (Run once -> a "Running..."
+   button in the page header, a modal's button vanishing behind a new card), the ring must follow
+   whatever took its place instead of freezing on the dead node. The anchor remembers the tracked
+   element's tag, classes and last centre; the replacement is the visible element of the same tag
+   with the most similar classes, nearest to where the old one was. */
+const MODAL_SEL = '.modal, .modal-backdrop, [role="dialog"]';
+const STATE_CLASSES = /^(busy|active|selected|open|disabled|loading|on|pulse)$/;
+function anchorOf(els) {
+  const el = (els || []).find((e) => e && e.isConnected);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { tag: el.tagName, tokens: [...el.classList].filter((c) => !STATE_CLASSES.test(c)), cx: r.left + r.width / 2, cy: r.top + r.height / 2, inModal: !!el.closest(MODAL_SEL), dialog: el.closest('.modal, [role="dialog"]') };
+}
+function findReplacement(anchor) {
+  const d = fdoc();
+  if (!d || !anchor || !anchor.tokens.length) return null;
+  let best = null, bestScore = 0, bestDist = Infinity;
+  d.querySelectorAll(anchor.tag).forEach((e) => {
+    if (!isVisible(e)) return;
+    // A modal's button is only replaced by another modal button: once the modal closes, the ring
+    // holds briefly (then the next action re-targets) instead of hopping onto the page behind it.
+    if (!!e.closest(MODAL_SEL) !== anchor.inModal) return;
+    const tokens = [...e.classList].filter((c) => !STATE_CLASSES.test(c));
+    const shared = anchor.tokens.filter((t) => tokens.includes(t)).length;
+    const score = shared / new Set([...anchor.tokens, ...tokens]).size;
+    if (score < 0.5) return;
+    const r = e.getBoundingClientRect();
+    const dist = Math.hypot(r.left + r.width / 2 - anchor.cx, r.top + r.height / 2 - anchor.cy);
+    if (score > bestScore || (score === bestScore && dist < bestDist)) { best = e; bestScore = score; bestDist = dist; }
+  });
+  return best;
+}
+function glideSpot() {
+  spot.classList.add('glide');
+  clearTimeout(S.glideT);
+  S.glideT = setTimeout(() => spot.classList.remove('glide'), 320);
+}
+
 function positionSpot() {
   const tr = S.track;
   if (!tr) return false;
@@ -1122,6 +1161,22 @@ function positionSpot() {
     const fresh = resolveTargets(tr.spec);
     if (fresh.length) tr.els = fresh;
     tr.lastResolve = now;
+  }
+  if (tr.els.some((e) => !e.isConnected)) {
+    const rep = tr.els.length === 1 ? findReplacement(tr.anchor) : null;
+    const dlg = tr.anchor && tr.anchor.dialog && tr.anchor.dialog.isConnected ? tr.anchor.dialog : null;
+    if (rep) { tr.els = [rep]; tr.lostAt = 0; tr.jump = true; }
+    // A dialog's button that vanished while its dialog stays open (e.g. "Generate checklist" while
+    // the draft loads): keep the ring on the dialog until the next target appears.
+    else if (dlg && tr.els.length === 1) { tr.els = [dlg]; tr.anchor = anchorOf(tr.els); tr.lostAt = 0; tr.jump = true; }
+    else {
+      tr.lostAt = tr.lostAt || now;
+      // Hold the last position while the app re-renders, rather than freezing then vanishing.
+      if (now - tr.lostAt < 700) return tr.visible !== false;
+    }
+  } else {
+    tr.lostAt = 0;
+    tr.anchor = anchorOf(tr.els);
   }
   const r = unionRect(tr.els);
   const lw = spotLayer.clientWidth, lh = spotLayer.clientHeight;
@@ -1134,6 +1189,7 @@ function positionSpot() {
   const x = Math.max(2, r.left - pad), y = Math.max(2, r.top - pad);
   const w = Math.min(lw - 2, r.left + r.width + pad) - x, h = Math.min(lh - 2, r.top + r.height + pad) - y;
   spot.style.transform = '';
+  if (tr.jump) { tr.jump = false; if (spot.style.width) glideSpot(); } // follow a replacement smoothly
   spot.style.left = `${x}px`; spot.style.top = `${y}px`;
   spot.style.width = `${Math.max(0, w)}px`; spot.style.height = `${Math.max(0, h)}px`;
   spot.style.opacity = '';
@@ -1190,7 +1246,7 @@ function onFrameLoad() {
   w.addEventListener('resize', kick);
   if (docObserver) docObserver.disconnect();
   docObserver = new MutationObserver(kick);
-  if (d.body) docObserver.observe(d.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+  if (d.body) docObserver.observe(d.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'disabled', 'aria-disabled', 'aria-busy'] });
   d.addEventListener('click', onFrameClick, true);
   w.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
@@ -1498,6 +1554,7 @@ if (location.protocol === 'file:') {
   showError('Opened from a file. This page needs to be served over http(s), because the guide reads the embedded app. Run <code>python3 -m http.server</code> inside <code>demo-site/</code> (or <code>npx serve demo-site</code>) and open the printed address.');
   $('explore-link').removeAttribute('href');
 } else {
+  $('explore-link').setAttribute('href', `app/?theme=light&v=${APP_V}`);
   loadFrame();
   if (location.hash === '#tour') start();
 }
