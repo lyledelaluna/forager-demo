@@ -37,7 +37,9 @@
     --text-3: #6b6f80;
     --shadow-card: 0 22px 44px -20px rgba(30, 35, 60, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
     --shadow-float: 0 18px 40px -12px rgba(30, 35, 60, 0.28);
-    --dim: rgba(18, 22, 40, 0.45);
+    --dim: rgba(18, 22, 40, 0.55);
+    /* Ring = brand border, then a white halo so it separates cleanly from the dimmed app. */
+    --spot-ring: 0 0 0 3px rgba(255, 255, 255, 0.95), 0 0 0 7px rgba(68, 84, 152, 0.35);
 
     --r-sm: 7px;
     --r-md: 12px;
@@ -166,6 +168,10 @@
   .t-bar .icon-btn:hover { border-color: var(--border); }
 
   .stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
+  /* The app renders at a desktop width of at least APP_MIN_W and is scaled down to fit the stage
+     (see fitViewport), so a narrow stage beside the guide doesn't squeeze it into its cramped
+     breakpoints. The spot layer shares the transform, so in-iframe rects still map 1:1. */
+  #viewport { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
   #app-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--bg); }
 
   /* Spotlight lives in a layer that exactly overlays the iframe, so an element's
@@ -173,8 +179,8 @@
   #spot-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 3; }
   #spot {
     position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 11px; opacity: 0;
-    border: 2px solid var(--brand-text);
-    box-shadow: 0 0 0 4px var(--brand-ring), 0 0 0 200vmax var(--dim);
+    border: 3px solid var(--brand);
+    box-shadow: var(--spot-ring), 0 0 0 200vmax var(--dim);
     /* No opacity transition on purpose: transitions only advance on painted frames, and a
        backgrounded tab can leave the ring stuck invisible. The .pulse keyframes handle entry. */
   }
@@ -185,9 +191,9 @@
   }
   #spot.pulse { animation: spotIn .7s var(--ease); }
   @keyframes spotIn {
-    0% { transform: scale(1.06); box-shadow: 0 0 0 12px rgba(68,84,152,0), 0 0 0 200vmax rgba(18,22,40,0); }
-    60% { transform: scale(1); box-shadow: 0 0 0 7px var(--brand-ring), 0 0 0 200vmax var(--dim); }
-    100% { transform: scale(1); box-shadow: 0 0 0 4px var(--brand-ring), 0 0 0 200vmax var(--dim); }
+    0% { transform: scale(1.04); box-shadow: 0 0 0 3px rgba(255,255,255,0), 0 0 0 16px rgba(68,84,152,0), 0 0 0 200vmax rgba(18,22,40,0); }
+    60% { transform: scale(1); box-shadow: 0 0 0 3px rgba(255,255,255,.95), 0 0 0 11px rgba(68,84,152,.4), 0 0 0 200vmax var(--dim); }
+    100% { transform: scale(1); box-shadow: var(--spot-ring), 0 0 0 200vmax var(--dim); }
   }
   #tap {
     position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
@@ -355,8 +361,10 @@
   </header>
 
   <div class="stage" id="stage">
-    <iframe id="app-frame" title="Forager app (interactive demo)" src="about:blank"></iframe>
-    <div id="spot-layer" aria-hidden="true"><div id="spot"></div><div id="tap"></div></div>
+    <div id="viewport">
+      <iframe id="app-frame" title="Forager app (interactive demo)" src="about:blank"></iframe>
+      <div id="spot-layer" aria-hidden="true"><div id="spot"></div><div id="tap"></div></div>
+    </div>
     <div class="stage-overlay" id="loading" hidden>
       <div class="loader"><span class="spin" aria-hidden="true"></span><span id="loading-msg">Loading the app…</span></div>
     </div>
@@ -481,11 +489,11 @@ const BEATS = [
   /* ---------------- Review Queue ---------------- */
   { page: P.queue, lead: 'AI reads, code judges', replaySkip: true,
     rest: 'The AI reports what it found. Fixed code sets Pass, Advisory, or Issues.',
-    target: { union: [{ any: [{ sel: '.rq-disclosure' }, { sel: '.rq-card-scroll' }] }, { sel: '.rq-card-status-row' }] }, wait: 12000,
+    target: { union: [{ sel: '.rq-card-status-row' }, { any: [{ sel: '.rq-disclosure-toggle' }, { sel: '.rq-disclosure' }] }] }, wait: 12000,
     pre: OPEN_RIVERSIDE, actions: OPEN_RIVERSIDE },
   { page: P.queue, lead: 'Clean pass, approved',
     rest: 'A person approves it, and only then is it filed.',
-    target: { any: [{ sel: '.rq-target-box' }, footerBtn('Approve & file')] },
+    target: { union: [{ sel: '.rq-target-box' }, footerBtn('Approve & file')] },
     once: 'approve-coa',
     actions: [
       selectChip('Riverside', 'Riverside'),
@@ -1116,7 +1124,7 @@ function positionSpot() {
     tr.visible = false;
     return false;
   }
-  const pad = 5;
+  const pad = 8;
   const x = Math.max(2, r.left - pad), y = Math.max(2, r.top - pad);
   const w = Math.min(lw - 2, r.left + r.width + pad) - x, h = Math.min(lh - 2, r.top + r.height + pad) - y;
   spot.style.transform = '';
@@ -1444,7 +1452,18 @@ function recenter() {
   clearTimeout(recT);
   recT = setTimeout(() => { if (S.track && !S.busy) ensureVisible(S.track.els, false); kick(); }, 180);
 }
-new ResizeObserver(() => { kick(); recenter(); }).observe(stageEl);
+const APP_MIN_W = 1120;
+function fitViewport() {
+  const vp = $('viewport');
+  const W = stageEl.clientWidth, H = stageEl.clientHeight;
+  // Phones keep the app's own responsive layout; scaling a desktop layout that far down is unreadable.
+  const s = W >= 700 && W < APP_MIN_W ? W / APP_MIN_W : 1;
+  vp.style.width = `${W / s}px`;
+  vp.style.height = `${H / s}px`;
+  vp.style.transform = s < 1 ? `scale(${s})` : '';
+}
+fitViewport();
+new ResizeObserver(() => { fitViewport(); kick(); recenter(); }).observe(stageEl);
 document.addEventListener('visibilitychange', () => { pending = false; kick(); });
 
 /* Boot: preload the app behind the landing so Start is instant. */
