@@ -166,6 +166,9 @@
   .t-bar .spacer { flex: 1; }
   .t-bar .icon-btn { border-color: transparent; }
   .t-bar .icon-btn:hover { border-color: var(--border); }
+  #skip-btn { white-space: nowrap; }
+  #skip-btn[hidden] { display: none; }
+  .skip-short { display: none; }
 
   .stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
   /* The app renders at a desktop width of at least APP_MIN_W and is scaled down to fit the stage
@@ -282,6 +285,8 @@
     #tour.guide-collapsed #guide { display: flex; }
     .t-bar { padding: 0 10px 0 12px; gap: 8px; }
     .demo-tag { font-size: 11.5px; }
+    .skip-long { display: none; }
+    .skip-short { display: inline; }
     #guide {
       border-left: 0; border-top: 1px solid var(--border); max-height: 42vh; max-height: 42dvh;
       border-radius: 16px 16px 0 0; box-shadow: 0 -12px 30px -14px rgba(30, 35, 60, 0.3);
@@ -356,6 +361,7 @@
     <span class="wordmark"><span class="mark" data-icon="leaf" data-size="15"></span>Forager</span>
     <span class="demo-tag">Fictional data · no AI called</span>
     <span class="spacer"></span>
+    <button type="button" class="btn ghost small" id="skip-btn" title="Skip the rest of the walkthrough and use the app freely"><span class="skip-long">Skip to exploring</span><span class="skip-short">Explore</span> <span aria-hidden="true">→</span></button>
     <button type="button" class="icon-btn" id="restart-btn" aria-label="Restart walkthrough" title="Restart walkthrough" data-icon="restart" data-size="15"></button>
     <button type="button" class="icon-btn" id="overview-btn" aria-label="Back to overview" title="Back to overview" data-icon="home" data-size="15"></button>
   </header>
@@ -1306,6 +1312,8 @@ async function start() {
   }
   loadingEl.hidden = true;
   S.started = true; S.ended = false;
+  $('skip-btn').hidden = false;
+  if (S.collapsed) setCollapsed(false); // a skip leaves the guide collapsed; starting over reopens it
   history.replaceState(null, '', '#tour');
   await fitSidebar();
   const ep = S.epoch;
@@ -1349,6 +1357,8 @@ async function restart() {
   if (ep !== S.epoch) return;
   loadingEl.hidden = true;
   S.started = true; S.ended = false;
+  $('skip-btn').hidden = false;
+  if (S.collapsed) setCollapsed(false); // a skip leaves the guide collapsed; starting over reopens it
   await fitSidebar();
   try { await enterBeat(0, ep, { forceNav: true }); } catch (e) { if (e !== CANCEL) render(0); }
   finally { if (ep === S.epoch) setBusy(false); }
@@ -1372,7 +1382,7 @@ endEl.innerHTML = `
     </div>
   </div>`;
 $('end-restart').addEventListener('click', () => restart());
-$('end-explore').addEventListener('click', () => { hideEnd(); clearSpot(); setCollapsed(true); });
+$('end-explore').addEventListener('click', () => { hideEnd(); clearSpot(); $('skip-btn').hidden = true; setCollapsed(true); });
 
 /* The end card is a modal: everything behind it is inert, and Tab stays inside it. */
 let endReturnFocus = null;
@@ -1419,6 +1429,23 @@ btnPrev.addEventListener('click', prev);
 btnCollapse.addEventListener('click', () => setCollapsed(!S.collapsed));
 pillExpand.addEventListener('click', () => { setCollapsed(false); btnNext.focus({ preventScroll: true }); });
 $('restart-btn').addEventListener('click', () => restart());
+
+/* Skip: stop whatever the tour is doing (bumping the epoch cancels in-flight actions), drop the
+   spotlight, and hand the app to the viewer. The collapsed guide stays available to resume or to
+   see the closing card; Restart brings the button back. */
+function skipToExplore() {
+  if (!S.started) return;
+  S.epoch++;
+  S.spotGen++;
+  clearTimeout(S.autoTimer);
+  setBusy(false);
+  hideEnd();
+  clearSpot();
+  S.ended = true;
+  $('skip-btn').hidden = true;
+  setCollapsed(true);
+}
+$('skip-btn').addEventListener('click', skipToExplore);
 $('overview-btn').addEventListener('click', () => showLanding());
 $('start-btn').addEventListener('click', start);
 
